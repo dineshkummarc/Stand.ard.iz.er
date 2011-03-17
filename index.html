@@ -7,9 +7,15 @@
    <link rel="stylesheet" href="Page.css" />
 </head>
 <body>
-	<div id="test"></div>
+	<div id="test">
+		<p class="one intro">Paragraph one</p>
+		<p class="two test">Paragraph two</p>
+		<p class="three">Paragraph three</p>
+		<p class="four test">Paragraph four</p>
+	</div>
+	<script src="Sizzle.js"></script>
 	<script src="Standardizer.js"></script>
-   <script>
+   <script type="text/javascript">
    	function time() {
    		console.log('Time is: ' + new Date());
    	}
@@ -33,8 +39,15 @@
 		});
 		
 		window.onload = function() {
-			console.log('Window Load Event');
-			time();
+			
+			console.log('Window onLoad Event');
+			
+			// Example of utilising jQuery's Sizzle CSS Selector Engine
+			var elem = st.find('.test');
+			for (item in elem) {
+				elem[item].style.border = '1px solid red';
+			}
+			
 		};
    </script>
 </body>

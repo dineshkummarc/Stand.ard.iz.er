@@ -607,7 +607,8 @@
 			load: __standardizer.domready,
 			ajax: __standardizer.ajax,
 			events: __standardizer.events,
-			css: __standardizer.css
+			css: __standardizer.css,
+			find: Sizzle
 		};
 		
 	}());
