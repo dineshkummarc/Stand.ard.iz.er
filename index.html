@@ -7,9 +7,35 @@
    <link rel="stylesheet" href="Page.css" />
 </head>
 <body>
+	<div id="test"></div>
 	<script src="Standardizer.js"></script>
    <script>
-		//
+   	function time() {
+   		console.log('Time is: ' + new Date());
+   	}
+   	
+		st.load(time);
+		
+		st.ajax({
+			url: 'Standardizer.js',
+
+			onError: function(message) {
+				console.log('ERROR!\n\n' + message + '\n');
+			},
+			
+			onSuccess: function(response) {
+				console.log(response);
+			},
+		
+			onComplete: function() {
+				console.log('This will run regardless of whether the request was successful or not');
+			}
+		});
+		
+		window.onload = function() {
+			console.log('Window Load Event');
+			time();
+		};
    </script>
 </body>
 </html>
