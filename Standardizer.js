@@ -12,7 +12,7 @@
 			 * @return v { Integer|undefined } if IE then returns the version, otherwise returns 'undefined' to indicate NOT a IE browser
 			 */
 			isIE: (function() {
-				/*var undef,
+				var undef,
 					 v = 3,
 					 div = document.createElement('div'),
 					 all = div.getElementsByTagName('i');
@@ -22,7 +22,7 @@
 					all[0]
 				);
 			
-				return v > 4 ? v : undef;*/
+				return v > 4 ? v : undef;
 			}()),
 			
 			// Errors
@@ -270,54 +270,104 @@
 			
 			// Event management
 			events: {
+			
 				// The add method allows us to assign a function to execute when an 
 				// event of a specified type occurs on a specific element
-				add: function (element, eventType, callback) {
-				
-					// Store the current value of this to use within closures 
-					var self = this; 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return undefined {  } no explicitly returned value
+				 */
+				add: (function() {
 					
-					eventType = eventType.toLowerCase();
+					var __add;
 					
-					// W3C method
-					if (element.addEventListener) { 
-						element.addEventListener(eventType, function(e) {
-							// Execute callback function, passing it a standardized version of 
-							// the event object, e. The standardize method is defined later 
-							callback(self.standardize(e)); 
-						}, false);
+					if (document.addEventListener) {
+						
+						// Rewrite add method to use W3C event listener
+						__add = function(element, eventType, callback) {
+							var eventType = eventType.toLowerCase();
+							element.addEventListener(eventType, function(e) {
+								// Execute callback function, passing it a standardized version of the event object
+								callback(__standardizer.events.standardize(e)); 
+							}, false);
+						};
+						
 					} 
 					
-					// Internet Explorer method 
-			      else if (element.attachEvent) {
-						element.attachEvent("on" + eventType, function() {
-							// IE uses window.event to store the current event's properties 
-							callback(self.standardize(window.event)); 
-						});
+					else if (document.attachEvent) {
+					
+						// Rewrite add method to use Internet Explorer event listener
+						__add = function(element, eventType, callback) {
+							var eventType = eventType.toLowerCase();
+							element.attachEvent("on" + eventType, function() {
+								// IE uses window.event to store the current event's properties 
+								callback(__standardizer.events.standardize(window.event)); 
+							});
+						};
+						
 					}
 					
-				},
+					return function(element, eventType, callback) {
+						__add(element, eventType, callback);
+					};
+					
+				}()),
 				
 				// The remove method allows us to remove previously assigned code from an event 
-				remove: function (element, eventType, callback) {
-				
-			      eventType = eventType.toLowerCase(); 
-					  
-					// W3C method
-					if (element.removeEventListener) { 
-						element.removeEventListener(element, eventType, callback); 
-			      } 
-			      
-			      // Internet Explorer method 
-			      else if (element.detachEvent) { 
-			      	element.detachEvent("on" + eventType, callback); 
-			      }
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return undefined {  } no explicitly returned value
+				 */
+				remove: (function() {
 					
-				},
-				
+					var __remove;
+					
+					if (document.removeEventListener) {
+						
+						// Rewrite remove method to use W3C event listener
+						__remove = function(element, eventType, callback) {
+							var eventType = eventType.toLowerCase();
+							console.info(element);
+							console.info(eventType);
+							console.info(callback);
+							element.removeEventListener(element, eventType, callback);
+						};
+						
+					} 
+					
+					else if (document.detachEvent) {
+					
+						// Rewrite remove method to use Internet Explorer event listener
+						__remove = function(element, eventType, callback) {
+							var eventType = eventType.toLowerCase();
+							element.detachEvent("on" + eventType, callback);
+						};
+						
+					}
+					
+					return function(element, eventType, callback) {
+						__remove(element, eventType, callback);
+					};
+					
+				}()),
+								
 				// The standardize method produces a unified set of event 
 				// properties, regardless of the browser 
-				standardize: function(event) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . { Object } .
+				 */
+			 	standardize: function(event) { 
 				
 					// These two methods, defined later, return the current position of the 
 					// mouse pointer, relative to the document as a whole, and relative to the 
@@ -384,7 +434,13 @@
 				},
 				
 				// The getTarget method locates the element the event occurred on
-				getTarget: function(event) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getTarget: function(event) { 
 				
 					// Internet Explorer value is srcElement, W3C value is target 
 					var target = event.srcElement || event.target; 
@@ -402,7 +458,13 @@
 				// The getCharacterFromKey method returns the character pressed when 
 				// keyboard events occur. You should use the keypress event 
 				// as others vary in reliability 
-				getCharacterFromKey: function(event) {
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getCharacterFromKey: function(event) {
 				 
 					var character = ""; 
 					
@@ -422,7 +484,13 @@
 				
 				// The getMousePositionRelativeToDocument method returns the current 
 				// mouse pointer position relative to the top left edge of the current page	
-				getMousePositionRelativeToDocument: function(event) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getMousePositionRelativeToDocument: function(event) { 
 					
 					var x = 0, y = 0; 
 					
@@ -449,7 +517,13 @@
 				
 				// The getMousePositionOffset method returns the distance of the mouse 
 				// pointer from the top left of the element the event occurred on 
-				getMousePositionOffset: function(event) {
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getMousePositionOffset: function(event) {
 				 
 					var x = 0, y = 0; 
 				
@@ -475,7 +549,13 @@
 				
 				// The getRelatedTarget method returns the element node the event was set up to 
 				// fire on, which can be different from the element the event actually fired on 
-				getRelatedTarget: function(event) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getRelatedTarget: function(event) { 
 				
 					var relatedTarget = event.relatedTarget; 
 					
@@ -492,13 +572,21 @@
 					return relatedTarget; 
 					
 				}
+				
 			},
 			
 			utilities: {
+			
 				// The toCamelCase method takes a hyphenated value and converts it into 
 				// a camel case equivalent, e.g.,  margin- left becomes marginLeft. Hyphens 
 				// are removed, and each word after the first begins with a capital letter 
-				toCamelCase: function(hyphenatedValue) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	toCamelCase: function(hyphenatedValue) { 
 					var result = hyphenatedValue.replace(/-\D/g, function(character) { 
 						return character.charAt(1).toUpperCase(); 
 					}); 
@@ -509,19 +597,34 @@
 				// The toHyphens method performs the opposite conversion, taking a camel 
 				// case string and converting it into a hyphenated one. 
 				// e.g., marginLeft becomes  margin- left 
-				toHyphens: function(camelCaseValue) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	toHyphens: function(camelCaseValue) { 
 					var result = camelCaseValue.replace(/[A-Z]/g, function(character) { 
 						return  ('-' + character.charAt(0).toLowerCase()); 
 					});
 				
 					return result; 
 				}
+				
 			},
 			
 			css: {
+			
 				// The getAppliedStyle method returns the current value of a specific 
 				// CSS style property on a particular element
-				getAppliedStyle: function(element, styleName) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getAppliedStyle: function(element, styleName) { 
 					var style = "";
 					
 					if (window.getComputedStyle) { 
@@ -540,7 +643,13 @@
 				// The getArrayOfClassNames method is a utility method which returns an 
 				// array of all the CSS class names assigned to a particular element. 
 				// Multiple class names are separated by a space character
-				getArrayOfClassNames: function(element) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	getArrayOfClassNames: function(element) { 
 					var classNames = []; 
 					if (element.className) { 
 						// If the element has a CSS class specified, create an array 
@@ -550,7 +659,14 @@
 				},
 				
 				// The addClass method adds a new CSS class of a given name to a particular element
-				addClass: function(element, className) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return undefined {  } no explicitly returned value
+				 */
+			 	addClass: function(element, className) { 
 					// Get a list of the current CSS class names applied to the element 
 					var classNames = this.getArrayOfClassNames(element); 
 					
@@ -562,7 +678,14 @@
 				},
 				
 				// The removeClass method removes a given CSS class name from a given element
-				removeClass: function(element, className) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return undefined {  } no explicitly returned value
+				 */
+			 	removeClass: function(element, className) { 
 					var classNames = this.getArrayOfClassNames(element); 
 			        
 					// Create a new array for storing all the final CSS class names in 
@@ -582,7 +705,14 @@
 				
 				// The hasClass method returns true if a given class name exists on a 
 				// specific element, false otherwise
-				hasClass: function(element, className) { 
+				/**
+				 * 
+				 * 
+				 * @param . { . } .
+				 * @param . { . } .
+				 * @return . {  } .
+				 */
+			 	hasClass: function(element, className) { 
 					// Assume by default that the class name is not applied to the element 
 					var isClassNamePresent = false; 
 					var classNames = this.getArrayOfClassNames(element); 
@@ -598,6 +728,7 @@
 					// Return true or false, depending on if the specified class name was found 
 					return isClassNamePresent; 
 				}
+				
 			}
 			
 		};
