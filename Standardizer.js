@@ -267,13 +267,15 @@
 	
 			},
 			
+			/**
+			 * hashchange event, HTML5 pushState support?
+			 */
+		 	history: function() {
+		 		
+		 	},
+			
 			// Event management
 			events: {
-			
-				/**
-				 * 
-				 */
-				stored: [],
 			
 				/**
 				 * The add method allows us to assign a function to execute when an event of a specified type occurs on a specific element
@@ -293,15 +295,6 @@
 						// Rewrite add method to use W3C event listener
 						__add = function(element, eventType, callback) {
 							
-							// Because we're using an anonymous function below within the addEventListener method
-							// (this is so we can standardise the event object)
-							// Removing the event listener wont work because you must use a Function Declaration/Expression (not an anonymous function)
-							// A way to explain this would be: var x = {}, y = {}; (x !== y) they may *look* the same but there is no way to tell.
-							
-							// So we need to store the callback in an object 
-							// and then later when we come to remove the listener we need to check the callback against the object and delete it?
-							__standardizer.events.stored.push(callback);
-							
 							eventType = eventType.toLowerCase();
 							element.addEventListener(eventType, function(e) {
 								// Execute callback function, passing it a standardized version of the event object
@@ -316,11 +309,13 @@
 					
 						// Rewrite add method to use Internet Explorer event listener
 						__add = function(element, eventType, callback) {
+						
 							eventType = eventType.toLowerCase();
 							element.attachEvent("on" + eventType, function() {
 								// IE uses window.event to store the current event's properties 
 								callback(__standardizer.events.standardize(window.event)); 
 							});
+							
 						};
 						
 					}
@@ -369,6 +364,13 @@
 					};
 					
 				}()),
+				
+				/**
+				 * 
+				 */
+			 	delegate: function() {
+			 		
+			 	},
 								
 				/**
 				 * The standardize method produces a unified set of event properties, regardless of the browser
@@ -740,7 +742,14 @@
 					
 				}
 				
-			}
+			},
+			
+			/**
+			 * 
+			 */
+		 	animation: function() {
+		 		
+		 	},
 			
 		};
 	
