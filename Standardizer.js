@@ -282,7 +282,7 @@
 			 * http://dean.edwards.name/weblog/2005/10/add-event2/
 			 * 
 			 * It doesn't utilises the DOM Level 2 Event Specification (http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/ecma-script-binding.html)
-			 * Instead it uses the traditional DOM Level 1 methods along with assigning arbitrary data to an object.
+			 * Instead it uses the traditional DOM Level 1 methods along with a hash map object to correlate the different listeners/handlers.
 			 * 
 			 * Originally I had used a branching technique for add/removeEventListener (W3C) & add/detachEvent (IE).
 			 * But discovered that trying to standardise the event object for a listener was impossible because it meant wrapping the callback in a function.
