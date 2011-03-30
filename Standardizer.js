@@ -786,7 +786,7 @@
 			 */
 		 	animation: function() {
 		 		
-		 	},
+		 	}
 			
 		};
 	
@@ -796,7 +796,7 @@
 			ajax: __standardizer.ajax,
 			events: __standardizer.events,
 			css: __standardizer.css,
-			find: Sizzle
+			find: Sizzle // Integrates the Sizzle CSS Selector Engine (http://sizzlejs.com/) as used by jQuery and other Js Frameworks
 		};
 		
 	}());
