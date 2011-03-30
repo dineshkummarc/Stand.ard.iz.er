@@ -274,96 +274,129 @@
 		 		
 		 	},
 			
-			// Event management
+			/**
+			 * Event management
+			 * 
+			 * Based on: addEvent/removeEvent written by Dean Edwards, 2005
+			 * http://dean.edwards.name/weblog/2005/10/add-event/
+			 * http://dean.edwards.name/weblog/2005/10/add-event2/
+			 * 
+			 * It doesn't utilises the DOM Level 2 Event Specification (http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/ecma-script-binding.html)
+			 * Instead it uses the traditional DOM Level 1 methods along with assigning arbitrary data to an object.
+			 * 
+			 * Originally I had used a branching technique for add/removeEventListener (W3C) & add/detachEvent (IE).
+			 * But discovered that trying to standardise the event object for a listener was impossible because it meant wrapping the callback in a function.
+			 * And within that function then executing the callback and passing through a normalised event object.
+			 * Problem is the removeEventListener can't remove listeners for anonymous functions.
+			 * 
+			 * e.g. this doesn't work...
+			   
+			   element.addEventListener(eventType, function(e) {
+            	handler(__standardizer.events.standardize(e));
+            }, false); 
+            
+			 */
 			events: {
+			
+				/**
+				 * A counter to generate a unique event handler ID
+				 */
+				id: 1,
 			
 				/**
 				 * The add method allows us to assign a function to execute when an event of a specified type occurs on a specific element
 				 * 
 				 * @param element { Element/Node } the element that will have the event listener attached
 				 * @param eventType { String } the event type, e.g. 'click' that will trigger the event handler
-				 * @param callback { Function } the function that will execute as the event handler
-				 * @return __add { Function } this immediately invoked function expression returns a bridge function which calls the private implementation
+				 * @param handler { Function } the function that will execute as the event handler
+				 * @return undefined {  } no explicitly returned value
 				 */
-				add: (function() {
+				add: function(element, eventType, handler) {
 					
-					var __add,
-						 eventType;
-					
-					if (document.addEventListener) {
-						
-						// Rewrite add method to use W3C event listener
-						__add = function(element, eventType, callback) {
-							
-							eventType = eventType.toLowerCase();
-							element.addEventListener(eventType, function(e) {
-								// Execute callback function, passing it a standardized version of the event object
-								callback(__standardizer.events.standardize(e)); 
-							}, false);
-							
-						};
-						
-					} 
-					
-					else if (document.attachEvent) {
-					
-						// Rewrite add method to use Internet Explorer event listener
-						__add = function(element, eventType, callback) {
-						
-							eventType = eventType.toLowerCase();
-							element.attachEvent("on" + eventType, function() {
-								// IE uses window.event to store the current event's properties 
-								callback(__standardizer.events.standardize(window.event)); 
-							});
-							
-						};
-						
+					// Normalise user input
+					eventType = eventType.toLowerCase();
+
+					// Assign each event handler function a unique ID (via a static property '$$guid')
+					if (!handler.$$guid) { 
+						handler.$$guid = __standardizer.events.id++;
 					}
 					
-					return function(element, eventType, callback) {
-						__add(element, eventType, callback);
-					};
+					// Create hash table of event types for the element.
+					// As there could be different events for the same element.
+					if (!element.events) { 
+						element.events = {};
+					}
 					
-				}()),
+					// Create hash table of event handlers for each element/event pair
+					var handlers = element.events[eventType];
+					if (!handlers) {
+						// If no eventType found then create empty hash for it
+						handlers = element.events[eventType] = {};
+
+						// Store the current event handler.
+						// As each eventType could have multiple handlers needed to be executed for it.
+						if (element["on" + eventType]) {
+							handlers[0] = element["on" + eventType];
+						}
+					}
+					
+					// Store the event handler in the hash table
+					handlers[handler.$$guid] = handler;
+					
+					// Assign a global event handler to do all the work
+					element["on" + eventType] = __standardizer.events.handler;
+					
+				},
 				
 				/**
 				 * The remove method allows us to remove previously assigned code from an event
 				 * 
 				 * @param element { Element/Node } the element that will have the event listener detached
 				 * @param eventType { String } the event type, e.g. 'click' that triggered the event handler
-				 * @param callback { Function } the function that was to be executed as the event handler
-				 * @return __remove { Function } this immediately invoked function expression returns a bridge function which calls the private implementation
+				 * @param handler { Function } the function that was to be executed as the event handler
+				 * @return undefined {  } no explicitly returned value
 				 */
-				remove: (function() {
+				remove: function(element, eventType, handler) {
+				
+					// Normalise user input
+					eventType = eventType.toLowerCase();
 					
-					var __remove,
-						 eventType;
-					
-					if (document.removeEventListener) {
-						
-						// Rewrite remove method to use W3C event listener
-						__remove = function(element, eventType, callback) {
-							eventType = eventType.toLowerCase();
-							element.removeEventListener(element, eventType, callback);
-						};
-						
-					} 
-					
-					else if (document.detachEvent) {
-					
-						// Rewrite remove method to use Internet Explorer event listener
-						__remove = function(element, eventType, callback) {
-							eventType = eventType.toLowerCase();
-							element.detachEvent("on" + eventType, callback);
-						};
-						
+					// Delete the event handler from the hash table
+					if (element.events && element.events[eventType]) {
+						delete element.events[eventType][handler.$$guid];
 					}
 					
-					return function(element, eventType, callback) {
-						__remove(element, eventType, callback);
-					};
+				},
+			
+				/**
+				 * 
+				 */
+				handler: function(e) {
+				
+					var returnValue = true,
+						 handlers,
+						 fn;
+	
+					// Standardise the event object
+					e = __standardizer.events.standardize(e) || __standardizer.events.standardize(window.event);
 					
-				}()),
+					// Get a reference to the hash table of event handlers
+					var handlers = this.events[e.type];
+
+					// Execute each event handler
+					for (var i in handlers) {
+						// Store current handler to be executed
+						fn = handlers[i];
+						
+						// If after executing the function it's return value is false, then explicitly set the return value
+						if (fn(e) === false) {
+							returnValue = false;
+						}
+					}
+					
+					return returnValue;
+					
+				},
 				
 				/**
 				 * 
@@ -384,7 +417,8 @@
 					// mouse pointer, relative to the document as a whole, and relative to the 
 					// element the event occurred within 
 					var page = this.getMousePositionRelativeToDocument(event),
-						 offset = this.getMousePositionOffset(event);
+						 offset = this.getMousePositionOffset(event),
+						 type = event.type;
 					
 					// Let's stop events from firing on element nodes above the current...
 					
@@ -396,11 +430,14 @@
 					// Internet Explorer method 
 					else { 
 						event.cancelBubble = true; 
-					} 
+					}
 					
 					// We return an object literal containing seven properties and one method 
 					return { 
 					
+						// The event type
+						type: type,
+						
 						// The target is the element the event occurred on 
 						target: this.getTarget(event), 
 						

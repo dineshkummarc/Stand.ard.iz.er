@@ -20,33 +20,43 @@
    		console.log('Time is: ' + new Date());
    	}
    	
-		st.load(time);
+		//st.load(time);
 		
 		st.ajax({
 			url: 'Standardizer.js',
 
 			onError: function(message) {
-				console.log('ERROR!\n\n' + message + '\n');
+				//console.log('ERROR!\n\n' + message + '\n');
 			},
 			
 			onSuccess: function(response) {
-				console.log(response);
+				//console.log(response);
 			},
 		
 			onComplete: function() {
-				console.log('This will run regardless of whether the request was successful or not');
+				//console.log('This will run regardless of whether the request was successful or not');
 			}
 		});
 		
 		window.onload = function() {
 			
-			console.log('Window onLoad Event');
+			//console.log('Window onLoad Event');
 			
 			// Example of utilising jQuery's Sizzle CSS Selector Engine
 			var elem = st.find('.test');
 			for (item in elem) {
 				elem[item].style.border = '1px solid red';
 			}
+			
+			// Event Management
+			var div = document.getElementById('test');
+			var myFunc = function(e) {
+				console.log(e); // standardised event object
+				
+				// Now remove the event listener after one click
+				st.events.remove(div, 'click', myFunc);
+			};
+			st.events.add(div, 'click', myFunc);
 			
 		};
    </script>
