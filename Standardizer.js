@@ -786,9 +786,73 @@
 			 */
 		 	animation: function() {
 		 		
-		 	}
+		 	},
+			
+			/**
+			 * An event emitter facility which provides the observer(Publisher/Subscriber) design pattern to javascript objects
+			 * Doesn't rely on the browser DOM. Super Simple.
+			 *
+			 * Modified from: 
+			 * https://github.com/jeromeetienne/microevent.js/blob/master/microevent.js
+			 *
+			 * All methods are added via the prototype chain (see below)
+			 */
+		 	observer: function(){}
 			
 		};
+		
+		__standardizer.observer.prototype = {
+			
+			bind: function(event, fct) {
+			
+				this._events = this._events || {};
+				this._events[event] = this._events[event]	|| [];
+				this._events[event].push(fct);
+				
+			},
+			
+			unbind: function(event, fct) {
+			
+				this._events = this._events || {};
+				
+				if( event in this._events === false) {	
+					return;
+				}
+				
+				this._events[event].splice(this._events[event].indexOf(fct), 1);
+				
+			},
+			
+			trigger: function(event /* , args... */) {
+				
+				this._events = this._events || {};
+				
+				if (event in this._events === false) {
+					return
+				};
+				
+				for(var i = 0; i < this._events[event].length; i++) {
+					this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+				}
+				
+			}
+			
+		};
+		
+		/**
+		 * This method will delegate all event emitter functions to the destination object
+		 *
+		 * @param destObject { Object } the object which will support MicroEvent
+		 */
+		__standardizer.observer.mixin = function(destObject) {
+		
+			var props	= ['bind', 'unbind', 'trigger'];
+			
+			for(var i = 0; i < props.length; i ++){
+				destObject.prototype[props[i]] = __standardizer.observer.prototype[props[i]];
+			}
+			
+		}
 	
 		// Return public API
 		return {
@@ -796,6 +860,7 @@
 			ajax: __standardizer.ajax,
 			events: __standardizer.events,
 			css: __standardizer.css,
+			observe: __standardizer.observer,
 			find: Sizzle // Integrates the Sizzle CSS Selector Engine (http://sizzlejs.com/) as used by jQuery and other Js Frameworks
 		};
 		

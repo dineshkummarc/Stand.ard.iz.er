@@ -59,6 +59,32 @@
 			st.events.add(div, 'click', myFunc);
 			
 		};
+		
+		// Publish/Subscribe Example
+		
+		/**
+		* Ticker is a class periodically sending out dummy tick events
+		*/
+		var Ticker = function (interval) {
+			var self	= this;
+			window.setInterval(function() {
+				self.trigger('tick', new Date());
+			}, 5000);
+		};
+		
+		/**
+		 * Make Ticker support event emitter methods
+		 */
+		st.observe.mixin(Ticker);
+
+		// Create a new instance of Ticker
+		var ticker = new Ticker();
+		
+		// Now bind the custom 'tick' event
+		ticker.bind('tick', function(date) {
+			// display to check
+			console.log('Notified data: ' + date);
+		});
    </script>
 </body>
 </html>
