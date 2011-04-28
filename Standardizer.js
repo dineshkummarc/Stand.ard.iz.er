@@ -37,11 +37,36 @@
 			 */
 			domready: (function(){
 
-				// Variables used throughout this script
-				var queue = [],
+				// Variables used throughout this function
+				var win = window,
+					 doc = win.document,
+					 dce = doc.createElement,
+					 supportAEL = (function(){
+					 	if (doc.addEventListener) {
+					 		return true;
+					 	} else {
+					 		return false;
+					 	}
+					 }()), 
+					 queue = [],
 					 exec,
 					 loaded,
-					 original_onload;
+					 fallback_onload, 
+					 explorerTimer,
+					 readyStateTimer,
+					 isIE = (function() {
+						var undef,
+							 v = 3,
+							 div = doc.createElement('div'),
+							 all = div.getElementsByTagName('i');
+					
+						while (
+							div.innerHTML = '<!--[if gt IE ' + (++v) + ']><i></i><![endif]-->',
+							all[0]
+						);
+					
+						return v > 4 ? v : undef;
+					}());
 				
 				// Private inner function which is called once DOM is loaded.
 				function process() {
@@ -49,8 +74,8 @@
 					loaded = true;
 					
 					// Cleanup
-					if (document.addEventListener) {
-						document.removeEventListener("DOMContentLoaded", process, false);
+					if (supportAEL) {
+						doc.removeEventListener("DOMContentLoaded", process, false);
 					}
 				
 					// Move the zero index item from the queue and set 'exec' equal to it
@@ -66,32 +91,79 @@
 						return fn();
 					}
 					
-					if (document.addEventListener) {
+					if (supportAEL) {
 						// Any number of listeners can be set for when this event fires,
 						// but just know that this event only ever fires once
-						document.addEventListener("DOMContentLoaded", process, false);
-					} else {
-						// All browsers support document.readyState (except Firefox 3.5 and lower, but they support DOMContentLoaded event)
-						/loaded|complete/.test(document.readyState) ? process() : setTimeout("__standardizer.domready(" + fn + ")", 10);
+						doc.addEventListener("DOMContentLoaded", process, false);
 					}
 					
-					// Fall back to standard window.onload event
-					// But make sure to store the original window.onload in case it was already set by another script
-					original_onload = window.onload;
+					// Internet Explorer versions less than 9 don't support DOMContentLoaded.
+					// The doScroll('left') method  by Diego Perini (http://javascript.nwbox.com/IEContentLoaded/) appears to be the most reliable solution.
+					// Microsoft documentation explains the reasoning behind this http://msdn.microsoft.com/en-us/library/ms531426.aspx#Component_Initialization
+					else if (isIE < 9) {
+						explorerTimer = win.setInterval(function() {
+							if (doc.body) {
+								// Check for doScroll success
+								try {
+									dce('div').doScroll('left');
+									win.clearInterval(explorerTimer);
+								} catch(e) { 
+									return;
+								}
+								
+								// Process function stack
+								process();
+								return;
+							}
+						}, 10);
+						
+						// Inner function to check readyState
+						function checkReadyState() {
+							if (doc.readyState == 'complete') {
+								// Clean-up
+								doc.detachEvent('onreadystatechange', checkReadyState);
+								win.clearInterval(explorerTimer);
+								win.clearInterval(readyStateTimer);
+								
+								// Process function stack
+								process();
+							}
+						}
+			
+						// If our page is placed inside an <iframe> by another user then the above doScroll method wont work.
+						// As a secondary fallback for Internet Explorer we'll check the readyState property.
+						// Be aware that this will fire *just* before the window.onload event so isn't ideal.
+						// Also notice that we use IE specific event model (attachEvent) to avoid being overwritten by 3rd party code.
+						doc.attachEvent('onreadystatechange', checkReadyState);
+						
+						// According to @jdalton: some browsers don't fire an onreadystatechange event, but do update the document.readyState
+						// So to workaround the above snippet we'll also poll via setInterval.
+						readyStateTimer = win.setInterval(function() {
+							checkReadyState();
+						}, 10);
+					}
 					
-					window.onload = function() {
-					
+					fallback_onload = function() {
 						// Note: calling process() now wont cause any problem for modern browsers.
 						// Because the function would have already been called when the DOM was loaded.
 						// Meaning the queue of functions have already been executed
 						process();
 						
-						// Check for original window.onload and execute it
-						if (original_onload) {
-							original_onload();
+						// Clean-up
+						if (supportAEL) {
+							doc.removeEventListener('load', fallback_onload, false);
+						} else {
+							doc.detachEvent('onload', fallback_onload);
 						}
-						
 					};
+					
+					// Using DOM1 model event handlers makes the script more secure than DOM0 event handlers.
+					// This way we don't have to worry about an already existing window.onload being overwritten as DOM1 model allows multiple handlers per event.
+					if (supportAEL) {
+						doc.addEventListener('load', fallback_onload, false);
+					} else {
+						doc.attachEvent('onload', fallback_onload);
+					}
 					
 					// As the DOM hasn't loaded yet we'll store this function and execute it later
 					queue.push(fn);
@@ -784,9 +856,68 @@
 			/**
 			 * 
 			 */
-		 	animation: function() {
-		 		
-		 	},
+		 	animation: (function() {
+				var parseEl = document.createElement('div'),
+				 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
+				 'borderRightColor borderRightWidth borderSpacing borderTopColor borderTopWidth bottom color fontSize '+
+				 'fontWeight height left letterSpacing lineHeight marginBottom marginLeft marginRight marginTop maxHeight '+
+				 'maxWidth minHeight minWidth opacity outlineColor outlineOffset outlineWidth paddingBottom paddingLeft '+
+				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' ');
+				
+				function interpolate(source,target,pos){ return (source+(target-source)*pos).toFixed(3); }
+				function s(str, p, c){ return str.substr(p,c||1); }
+				function color(source,target,pos){
+				 var i = 2, j, c, tmp, v = [], r = [];
+				 while(j=3,c=arguments[i-1],i--)
+				   if(s(c,0)=='r') { c = c.match(/\d+/g); while(j--) v.push(~~c[j]); } else {
+				     if(c.length==4) c='#'+s(c,1)+s(c,1)+s(c,2)+s(c,2)+s(c,3)+s(c,3);
+				     while(j--) v.push(parseInt(s(c,1+j*2,2), 16)); }
+				 while(j--) { tmp = ~~(v[j+3]+(v[j]-v[j+3])*pos); r.push(tmp<0?0:tmp>255?255:tmp); }
+				 return 'rgb('+r.join(',')+')';
+				}
+				
+				function parse(prop){
+				 var p = parseFloat(prop), q = prop.replace(/^[\-\d\.]+/,'');
+				 return isNaN(p) ? { v: q, f: color, u: ''} : { v: p, f: interpolate, u: q };
+				}
+				
+				function normalize(style){
+				 var css, rules = {}, i = props.length, v;
+				 parseEl.innerHTML = '<div style="'+style+'"></div>';
+				 css = parseEl.childNodes[0].style;
+				 while(i--) if(v = css[props[i]]) rules[props[i]] = parse(v);
+				 return rules;
+				}
+				
+				function bounce(pos) {
+					if (pos < (1/2.75)) {
+						return (7.5625*pos*pos);
+					} else if (pos < (2/2.75)) {
+						return (7.5625*(pos-=(1.5/2.75))*pos + .75);
+					} else if (pos < (2.5/2.75)) {
+						return (7.5625*(pos-=(2.25/2.75))*pos + .9375);
+					} else {
+						return (7.5625*(pos-=(2.625/2.75))*pos + .984375);
+					}
+				}
+				
+				return function(el, style, opts, after) {
+					el = typeof el == 'string' ? document.getElementById(el) : el;
+					opts = opts || {};
+					var target = normalize(style), comp = el.currentStyle ? el.currentStyle : getComputedStyle(el, null),
+					  prop, current = {}, start = +new Date, dur = opts.duration||200, finish = start+dur, interval,
+					  easing = opts.easing || function(pos){ return (-Math.cos(pos*Math.PI)/2) + 0.5; };
+					  // Modification made to include 'bounce' easing
+					  if (easing === 'bounce') { easing = bounce; }
+					for(prop in target) current[prop] = parse(comp[prop]);
+					interval = setInterval(function(){
+					  var time = +new Date, pos = time>finish ? 1 : (time-start)/dur;
+					  for(prop in target)
+					    el.style[prop] = target[prop].f(current[prop].v,target[prop].v,easing(pos)) + target[prop].u;
+					  if(time>finish) { clearInterval(interval); opts.after && opts.after(); after && setTimeout(after,1); }
+					},10);
+				};
+			}()),
 			
 			/**
 			 * An event emitter facility which provides the observer(Publisher/Subscriber) design pattern to javascript objects
@@ -861,6 +992,7 @@
 			events: __standardizer.events,
 			css: __standardizer.css,
 			observe: __standardizer.observer,
+			anim: __standardizer.animation,
 			find: Sizzle // Integrates the Sizzle CSS Selector Engine (http://sizzlejs.com/) as used by jQuery and other Js Frameworks
 		};
 		
