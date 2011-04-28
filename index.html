@@ -7,6 +7,10 @@
    <link rel="stylesheet" href="Page.css" />
 </head>
 <body>
+	<!-- ELEMENTS FOR TESTING ANIMATION -->
+	<div id="anim1" style="position:absolute;left:0px;background:#f00;opacity:0">test1</div>
+   <div id="anim2" style="border:0px solid #00ff00;position:absolute;left:0px;top:400px;background:#0f0">test2</div>
+   
 	<div id="test">
 		<p class="one intro">Paragraph one</p>
 		<p class="two test">Paragraph two</p>
@@ -20,32 +24,33 @@
    		console.log('Time is: ' + new Date());
    	}
    	
-		//st.load(time);
+		st.load(time);
 		
 		st.ajax({
 			url: 'Standardizer.js',
 
 			onError: function(message) {
-				//console.log('ERROR!\n\n' + message + '\n');
+				console.log('ERROR!\n\n' + message + '\n');
 			},
 			
 			onSuccess: function(response) {
-				//console.log(response);
+				console.log(response.substring(0, 20) + '... this is a shortened response');
 			},
 		
 			onComplete: function() {
-				//console.log('This will run regardless of whether the request was successful or not');
+				console.log('This will run regardless of whether the request was successful or not');
 			}
 		});
 		
 		window.onload = function() {
 			
-			//console.log('Window onLoad Event');
+			console.log('Window onLoad Event: ');
+			time();
 			
 			// Example of utilising jQuery's Sizzle CSS Selector Engine
 			var elem = st.find('.test');
-			for (item in elem) {
-				elem[item].style.border = '1px solid red';
+			for (var i = 0, len = elem.length; i < len; i++) {
+				elem[i].style.border = '1px solid red';
 			}
 			
 			// Event Management
@@ -58,9 +63,20 @@
 			};
 			st.events.add(div, 'click', myFunc);
 			
+			// Animation Example						
+			st.anim('anim2', 'left:300px; padding:10px; border:50px solid #ff0000', {
+				duration: 2000,
+				after: function() {
+					st.anim('anim1', 'background:#0f0; left:100px; padding-bottom:100px; opacity:1', { 
+						duration: 4000, 
+						easing: 'bounce' // only one easing function available currently
+					});
+				}
+			});
+			
 		};
 		
-		// Publish/Subscribe Example
+// Publish/Subscribe Example
 		
 		/**
 		* Ticker is a class periodically sending out dummy tick events
@@ -84,7 +100,7 @@
 		ticker.bind('tick', function(date) {
 			// display to check
 			console.log('Notified data: ' + date);
-		});
+		});		
    </script>
 </body>
 </html>
