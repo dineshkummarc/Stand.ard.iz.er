@@ -69,7 +69,10 @@
 				duration: 2000, 
 				easing: 'bounce', 
 				after: function() {
-					console.log('animation finished');	
+					console.log('animation finished');
+					
+					var el = document.getElementById('anim1');
+					st.anim(el, 'left:500px'); // you can specify a string or an element node
 				}
 			});
 						
