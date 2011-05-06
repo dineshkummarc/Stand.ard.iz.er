@@ -8,8 +8,8 @@
 </head>
 <body>
 	<!-- ELEMENTS FOR TESTING ANIMATION -->
-	<div id="anim1" style="position:absolute;left:0px;background:#f00;opacity:0">test1</div>
-   <div id="anim2" style="border:0px solid #00ff00;position:absolute;left:0px;top:400px;background:#0f0">test2</div>
+	<div id="anim1">test1</div>
+   <div id="anim2">test2</div>
    
 	<div id="test">
 		<p class="one intro">Paragraph one</p>
@@ -64,16 +64,27 @@
 			st.events.add(div, 'click', myFunc);
 			
 			// Animation Example						
-			st.anim('anim2', 'left:300px; padding:10px; border:50px solid #ff0000', {
-				duration: 2000,
+			st.anim('anim1', 'color:#fff; opacity:1;', { duration: 1000 });
+			st.anim('anim2', 'left:500px;', { 
+				duration: 2000, 
+				easing: 'bounce', 
 				after: function() {
-					st.anim('anim1', 'background:#0f0; left:100px; padding-bottom:100px; opacity:1', { 
-						duration: 4000, 
-						easing: 'bounce' // only one easing function available currently
-					});
+					console.log('animation finished');	
 				}
 			});
 			
+			/*
+			st.anim('anim2', 'left:300px; padding:10px; border:50px solid #ff0000', {
+				duration: 2000,
+				after: function() {
+					st.anim('anim1', 'background:#0f0; left:100px; padding-bottom:100px; opacity:1;', { 
+						duration: 2000, 
+						easing: 'bounce' // easeOut - easeOutStrong - easeIn - easeInStrong - bounce
+					});
+				}
+			});
+			*/
+						
 		};
 		
 // Publish/Subscribe Example
@@ -99,7 +110,7 @@
 		// Now bind the custom 'tick' event
 		ticker.bind('tick', function(date) {
 			// display to check
-			console.log('Notified data: ' + date);
+			//console.log('Notified data: ' + date);
 		});		
    </script>
 </body>

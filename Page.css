@@ -1,0 +1,15 @@
+#anim1 {
+	background:#f00;
+	left: 20px;
+	opacity: 0; /* IE equivalent */filter:alpha(opacity=0);
+	position: absolute;
+	top: 180px;
+}
+
+#anim2 {
+	background: #0f0;
+	border: 0px solid #00ff00;
+	position: absolute;
+	left: 20px;
+	top: 200px;
+}

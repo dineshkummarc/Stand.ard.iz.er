@@ -860,13 +860,117 @@
 			 */
 		 	animation: (function() {
 				var parseEl = document.createElement('div'),
+					 isIE = !!window.attachEvent && !window.opera,
 					 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
 				 				 'borderRightColor borderRightWidth borderSpacing borderTopColor borderTopWidth bottom color fontSize '+
 				 				 'fontWeight height left letterSpacing lineHeight marginBottom marginLeft marginRight marginTop maxHeight '+
 				 				 'maxWidth minHeight minWidth opacity outlineColor outlineOffset outlineWidth paddingBottom paddingLeft '+
-				 				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' ');
+				 				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' '),
 				
-				function interpolate(source,target,pos) { 
+				// Internet Explorer < 9 support for Opacity (via @kangax)...
+				
+				 				 supportsOpacity = typeof parseEl.style.opacity == 'string',
+				 				 supportsFilters = typeof parseEl.style.filter == 'string',
+				 				 reOpacity = /alpha\(opacity=([^\)]+)\)/,
+				 				 setOpacity = function(){ },
+				 				 getOpacityFromComputed = function(){ return '1'; };
+				 				 
+				if (supportsOpacity) {
+					setOpacity = function(el, value) {
+						el.style.opacity = value;
+					};
+					
+					getOpacityFromComputed = function(computed) { 
+						return computed.opacity; 
+					};
+				}
+				else if (supportsFilters) {
+					setOpacity = function(el, value) {
+						var es = el.style;
+						
+						// If the element doesn't have 'hasLayout' triggered then make sure it is forced via the 'zoom' style hack
+						if(!el.currentStyle.hasLayout) { 
+							es.zoom = 1;						
+						}
+						
+						if (reOpacity.test(es.filter)) {
+							value = value >= 0.9999 ? '' : ('alpha(opacity=' + (value * 100) + ')');
+							es.filter = es.filter.replace(reOpacity, value);
+						} else {
+							es.filter += ' alpha(opacity=' + (value * 100) + ')';
+						}
+					};
+					
+					getOpacityFromComputed = function(comp) {
+						var m = comp.filter.match(reOpacity);
+						return (m ? (m[1] / 100) : 1) + '';
+					};
+				}
+				
+				var easings = {
+					easeOut: function(pos) {
+						return Math.sin(pos * Math.PI / 2);
+					},
+					
+					easeOutStrong: function(pos) {
+						return (pos == 1) ? 1 : 1 - Math.pow(2, -10 * pos);
+					},
+					
+					easeIn: function(pos) {
+						return pos * pos;
+					},
+					
+					easeInStrong: function(pos) {
+						return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
+					},
+					
+					bounce: function(pos) {
+						if (pos < (1 / 2.75)) {
+							return 7.5625 * pos * pos;
+						}
+						if (pos < (2 / 2.75)) {
+							return 7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75;
+						}
+						if (pos < (2.5 / 2.75)) {
+							return 7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375;
+						}
+						return 7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375;
+					},
+					
+					cosine: function(pos) {
+						return (-Math.cos(pos * Math.PI) / 2) + 0.5;
+					},
+					
+					sine: function(pos) {
+						return (Math.sin(pos * Math.PI / 2));
+					},
+					
+					flicker: function(pos) {
+						return ((-Math.cos(pos * Math.PI) / 4) + 0.75) + Math.random() * 0.25;
+					},
+					
+					wobble: function(pos) {
+						return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
+					},
+					
+					pulsate: function(pos) {
+						return (0.5 + Math.sin(17 * pos) / 2);
+					},
+					
+					expo: function(pos) {
+						return Math.pow(2, 8 * (pos - 1));
+					},
+					
+					quad: function(pos) {
+						return Math.pow(pos, 2);
+					},
+					
+					cube: function(pos) {
+						return Math.pow(pos, 3);
+					}
+				};
+				
+				function interpolate(source, target, pos) { 
 					return (source+(target-source)*pos).toFixed(3); 
 				}
 				
@@ -903,11 +1007,16 @@
 					return 'rgb('+r.join(',')+')';
 				}
 				
-				function parse(prop) {
-					var p = parseFloat(prop), 
-						 q = prop.replace(/^[\-\d\.]+/,'');
-						 
-					return isNaN(p) ? { v: q, f: color, u: ''} : { v: p, f: interpolate, u: q };
+				function parse(val) {
+					var v = parseFloat(val), 
+						 q = val.replace(/^[\-\d\.]+/,'');
+					
+					// If a colour value...
+					if (isNaN(v)) {
+						return { v: q, f: color, u: ''};
+					} else {
+						return { v: v, f: interpolate, u: q };
+					}
 				}
 				
 				function normalize(style) {
@@ -923,27 +1032,15 @@
 					while(i--) {
 						
 						if(v = css[props[i]]) {
-							rules[props[i]] = parse(v);
-							console.log('rules[props[i]]', rules[props[i]]);
+							rules[props[i]] = parse(v, props[i]);
 						}
 					}
 					
 					return rules;
 				}
 				
-				function bounce(pos) {
-					if (pos < (1/2.75)) {
-						return (7.5625*pos*pos);
-					} else if (pos < (2/2.75)) {
-						return (7.5625*(pos-=(1.5/2.75))*pos + .75);
-					} else if (pos < (2.5/2.75)) {
-						return (7.5625*(pos-=(2.25/2.75))*pos + .9375);
-					} else {
-						return (7.5625*(pos-=(2.625/2.75))*pos + .984375);
-					}
-				}
-				
 				return function(el, style, opts, after) {
+					// Either get the element by specified ID or just use the element node passed through
 					el = typeof el == 'string' ? document.getElementById(el) : el;
 					opts = opts || {};
 					
@@ -955,26 +1052,71 @@
 						 dur = opts.duration||200, 
 						 finish = start+dur, 
 						 interval,
-						 easing = opts.easing || function(pos) { 
-						 	return (-Math.cos(pos*Math.PI)/2) + 0.5;
-						 };
+						 curValue, // Added for IE<9 opacity support
+						 easing = opts.easing || easings.cosine; // cosine easing effect is the default
 						 
-					// Modification made to include 'bounce' easing
-					if (easing === 'bounce') { 
-						easing = bounce;
+					// Modification made to include different easing styles
+					switch (easing) {
+						case 'easeOut':
+							easing = easings.easeOut;
+							break;
+						case 'easeOutStrong':
+							easing = easings.easeOutStrong;
+							break;
+						case 'easeIn':
+							easing = easings.easeIn;
+							break;
+						case 'easeInStrong':
+							easing = easings.easeInStrong;
+							break;
+						case 'bounce':
+							easing = easings.bounce;
+							break;
+						case 'cosine':
+							easing = easings.cosine;
+							break;
+						case 'sine':
+							easing = easings.sine;
+							break;
+						case 'flicker':
+							easing = easings.flicker;
+							break;
+						case 'wobble':
+							easing = easings.wobble;
+							break;
+						case 'pulsate':
+							easing = easings.pulsate;
+							break;
+						case 'expo':
+							easing = easings.expo;
+							break;
+						case 'quad':
+							easing = easings.quad;
+							break;
+						case 'cube':
+							easing = easings.cube;
+							break;
 					}
 					
-					for (prop in target) {
-						current[prop] = parse(comp[prop]);
+					for (val in target) {
+						//current[val] = parse(comp[val]);
+						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]); // updated for IE<9 opacity support
 					}
 					
 					interval = setInterval(function() {
-						var time = +new Date, pos = time>finish ? 1 : (time-start)/dur;
+						var time = +new Date, 
+							 pos = time>finish ? 1 : (time-start)/dur;
 					  
 						for(prop in target) {
-							el.style[prop] = target[prop].f(current[prop].v,
-							target[prop].v,
-							easing(pos)) + target[prop].u;
+							//el.style[prop] = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
+							
+							// updated for IE<9 opacity support...
+							curValue = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
+							if (prop === 'opacity') {
+								setOpacity(el, curValue);
+							} else {
+								el.style[prop] = curValue;
+							}
 						}
 					
 						if(time > finish) { 
