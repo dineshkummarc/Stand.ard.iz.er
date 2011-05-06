@@ -856,9 +856,18 @@
 			},
 			
 			/**
+			 * The following method allows the user to animate any elements using CSS properties.
 			 * 
+			 * Original code by @thomasfuch (emile.js)
+			 * IE<9 Opacity support by @kangax
+			 * 
+			 * @param el { Element/Node } 
+			 * @param style { String } 
+			 * @param opts { Object } 
+			 * @param after { Function } 
+			 * @return { Function } immediately invoked function expression which returns a new Function
 			 */
-		 	animation: (function() {
+			animation: (function() {
 				var parseEl = document.createElement('div'),
 					 isIE = !!window.attachEvent && !window.opera,
 					 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
@@ -1052,7 +1061,7 @@
 						 dur = opts.duration||200, 
 						 finish = start+dur, 
 						 interval,
-						 curValue, // Added for IE<9 opacity support
+						 curValue,
 						 easing = opts.easing || easings.cosine; // cosine easing effect is the default
 						 
 					// Modification made to include different easing styles
@@ -1099,8 +1108,7 @@
 					}
 					
 					for (val in target) {
-						//current[val] = parse(comp[val]);
-						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]); // updated for IE<9 opacity support
+						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
 					}
 					
 					interval = setInterval(function() {
@@ -1108,9 +1116,6 @@
 							 pos = time>finish ? 1 : (time-start)/dur;
 					  
 						for(prop in target) {
-							//el.style[prop] = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
-							
-							// updated for IE<9 opacity support...
 							curValue = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
 							if (prop === 'opacity') {
 								setOpacity(el, curValue);
