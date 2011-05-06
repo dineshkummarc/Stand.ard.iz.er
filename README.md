@@ -37,4 +37,4 @@ Each feature can easily be deleted without affecting any others (except for the 
 
 Size?
 -----
-At the moment it's around 41k original source and the approx 12k minified (more with GZIP) + you might not need all these features so it'll be even less.
+At the moment it's around 41k original source and approx 12k minified (more with GZIP) + you might not need all these features so it'll be even less.
