@@ -30,4 +30,11 @@ Upcoming Features
 * Event Delegation Method
 * History Management
 
+Modular?
+--------
+
 Each feature can easily be deleted without affecting any others (except for the CSS methods which do require the basic utilities 'toCamelCase' and 'toHyphens'.
+
+Size?
+-----
+At the moment it's around 41k original source and the approx 12k minified (more with GZIP) + you might not need all these features so it'll be even less.
