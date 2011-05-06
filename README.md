@@ -4,13 +4,10 @@
 Description
 -----------
 
-JavaScript library that attempts to standardise the API interface provided by the browser (looking at Internet Explorer 6,7,8 mainly).
+Jumping on the bandwagon with the intent on helping improve my JavaScript knowledge.
 
-At the moment this project is still very much at the architectural stage and so I'm currently planning the features I think should be included and how best to implement them.
+Seems 'micro-frameworks' are all the rage now, and although this isn't a micro-framework (it's just a small framework) I've decided to try and write a framework that includes all the functionality I use on a daily basis in my web development work.
 
-Update
-------
+Yes of course jQuery has every functionality imaginable, and also a plugin architecture that fills any gaps it may have. But I don't like the fact that if you need some functionality (such as animation or ajax) you need the ENTIRE jQuery framework. I wont something more modular.
 
-The theory behind the library has changed somewhat into something that will organically grow as time goes on.
-
-I'm going to be adding the types of features to this library that you'll find in other JavaScript frameworks, but it will be with the intention of improving my JavaScript knowledge via the process of 'doing' and building the types of features I usually require but don't need an entire framework for (e.g. jQuery)
+With this framework I can strip out any features that aren't required and can add to it as required. It wont feature loads of features, just the sort of things I need on a regular basis.
