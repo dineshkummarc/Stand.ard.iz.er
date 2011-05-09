@@ -120,7 +120,7 @@
 						}, 10);
 						
 						// Inner function to check readyState
-						function checkReadyState() {
+						var checkReadyState = function() {
 							if (doc.readyState == 'complete') {
 								// Clean-up
 								doc.detachEvent('onreadystatechange', checkReadyState);
@@ -130,7 +130,7 @@
 								// Process function stack
 								process();
 							}
-						}
+						};
 			
 						// If our page is placed inside an <iframe> by another user then the above doScroll method wont work.
 						// As a secondary fallback for Internet Explorer we'll check the readyState property.
