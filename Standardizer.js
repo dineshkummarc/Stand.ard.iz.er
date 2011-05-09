@@ -213,7 +213,7 @@
 		 	ajax: function(settings) {
 		 	
 		 		// JavaScript engine will 'hoist' variables so we'll be specific and declare them here
-		 		var xhr, url, requestDone;
+		 		var xhr, url, requestDone, 
 		 		
 		 		// Load the config object with defaults, if no values were provided by the user
 				config = {
