@@ -5,7 +5,7 @@
 	
 		// Private implementation
 		var __standardizer = {
-			
+		
 			/**
 			 * Following property indicates whether the current rendering engine is Trident (i.e. Internet Explorer)
 			 * 
@@ -723,7 +723,36 @@
 				
 					return result; 
 
-				}
+				},
+				
+				/**
+				 * The following method isn't callable via the 'utilities' namespace.
+				 * It actually modifies the native Function object so as to mimic the functionality of new ECMAScript5 feature known as 'function binding'.
+				 * Similar functionality can be carried out with the standard Function.apply/call, but bind() is more flexible and easier syntax.
+				 *
+				 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
+				 */
+			 	bind: (function() { 
+					
+					if (!Function.prototype.bind) {
+						Function.prototype.bind = function(obj) {
+						
+							var slice = [].slice,
+								 args = slice.call(arguments, 1),
+								 self = this,
+								 nop = function(){},
+								 bound = function() {
+								 	return self.apply(this instanceof nop ? this : (obj || {}), args.concat(slice.call(arguments)));
+								 };
+							
+							nop.prototype = self.prototype;
+							bound.prototype = new nop();
+							return bound;
+
+						};
+					}
+
+				}())
 				
 			},
 			
@@ -1111,7 +1140,8 @@
 						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
 					}
 					
-					interval = setInterval(function() {
+					// Code to position element (called via setInterval || requestAnimationFrame API)
+					function render() {
 						var time = +new Date, 
 							 pos = time>finish ? 1 : (time-start)/dur;
 					  
@@ -1129,7 +1159,9 @@
 							opts.after && opts.after(); 
 							after && setTimeout(after, 1);
 						}
-					}, 10);
+					}
+					
+					interval = setInterval(render, 10);
 				};
 			}()),
 			

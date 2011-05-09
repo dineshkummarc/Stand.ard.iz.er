@@ -102,7 +102,37 @@
 		ticker.bind('tick', function(date) {
 			// display to check
 			console.log('Notified data: ' + date);
-		});		
+		});
+		
+// Bind Utility
+
+		// Manipulate explicit "this"
+		var x = 9, 
+		    module = {
+		    	getX: function() { 
+		      	console.log(this.x); 
+		      },
+		    	x: 81
+		    };
+		
+		
+		// "module.getX()" called, "module" is "this", "module.x" is returned
+		module.getX();
+		// > 81  
+		
+		// store a reference in the global "this"
+		var getX = module.getX;
+		
+		// "getX()" called, "this" is global, "x" is returned
+		getX();
+		// > 9
+		
+		// store a reference with "module" bound as "this"
+		var boundGetX = getX.bind(module);
+		
+		// "boundGetX()" called, "module" is "this" again, "module.x" is returned
+		boundGetX();
+		// > 81
    </script>
 </body>
 </html>
