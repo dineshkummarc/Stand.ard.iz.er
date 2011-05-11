@@ -452,7 +452,10 @@
 						 fn;
 	
 					// Standardise the event object
-					e = __standardizer.events.standardize(e) || __standardizer.events.standardize(window.event);
+					e = e || window.event;
+					
+					// If you try and pass e to standardize method without first checking for e || window.event then a race condition issue happens with IE<8
+					e = __standardizer.events.standardize(e);
 					
 					// Get a reference to the hash table of event handlers
 					handlers = this.events[e.type];
@@ -723,6 +726,43 @@
 				
 					return result; 
 
+				},
+				
+				/**
+				 * The following method truncates a string by the length specified.
+				 * The second argument is the suffix (e.g. rather than ... you could have !!!)
+				 *
+				 * @param str { String } the string to 
+				 * @param length { Integer } the length the string should be (if none specified a default is used)
+				 * @param suffix { String } default value is ... but can be overidden with any number of characters
+				 * @return { String } the modified String value
+				 */
+				truncate: function(str, length, suffix) {
+					length = length || 30;
+					suffix = (typeof suffix == "undefined") ? '...' : suffix;
+					
+					// If the string isn't longer than the specified cut-off length then just return the original string
+					return (str.length > length) 
+						// Otherwise, we borrow the String object's "slice()" method using the "call()" method
+						? String.prototype.slice.call(str, 0, length - suffix.length) + suffix
+						: str;
+				},
+				
+				/**
+				 * The following method inserts a specified element node into the DOM after the specified target element node.
+				 * For some reason the DOM api provides different methods to acheive this functionality but no actual native method?
+				 *
+				 * @param newElement { Element/Node } new element node to be inserted
+				 * @param targetElement { Element/Node } target element node where the new element node should be inserted after
+				 * @return undefined {  } no explicitly returned value
+				 */
+				insertAfter: function(newElement, targetElement) {
+					var parent = targetElement.parentNode;
+					
+					(parent.lastChild == targetElement) 
+						? parent.appendChild(newElement); 
+						: parent.insertBefore(newElement, targetElement.nextSibling);
+					
 				},
 				
 				/**
@@ -1140,7 +1180,7 @@
 						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
 					}
 					
-					// Code to position element (called via setInterval || requestAnimationFrame API)
+					// Code to position element
 					function render() {
 						var time = +new Date, 
 							 pos = time>finish ? 1 : (time-start)/dur;
