@@ -64,15 +64,17 @@
 			st.events.add(div, 'click', myFunc);
 			
 			// Animation Example						
-			st.anim('anim1', 'color:#fff; opacity:1;', { duration: 1000 });
+			st.anim('anim1', 'color:#fff; opacity:1;', { duration: '1000' });
 			st.anim('anim2', 'left:500px;', { 
-				duration: 2000, 
-				easing: 'bounce', 
+				duration: '2000', 
+				easing: 'ease-Out', 
+				// had used 'bounce' easing but that's not supported with CSS transitions (Js animations also has different easing names?!)
+				// linear | ease-in | ease-out (are only consistent easings across css transitions and js animations)
 				after: function() {
 					console.log('animation finished');
 					
 					var el = document.getElementById('anim1');
-					st.anim(el, 'left:500px'); // you can specify a string or an element node
+					st.anim(el, 'left:500px;'); // you can specify a string or an element node
 				}
 			});
 						
