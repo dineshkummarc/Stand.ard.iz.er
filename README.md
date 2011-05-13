@@ -18,11 +18,11 @@ Features
 * Robust DOM Ready function
 * AJAX handler
 * Event Management (with normalised event object)
-* Basic Utilities (toCamelCase, toHyphens)
-* CSS methods (getAppliedStyle, addClass, removeClass, hasClass)
-* Animations library
+* Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, bind)
+* CSS methods (getAppliedStyle, addClass, removeClass, hasClass, hasTransitions, whichTransition)
+* Animations library (inc. CSS3 Transitions support, with fallback to 'plain vanilla' JavaScript)
 * Event Emitter
-* CSS Selector Engine (aka Sizzle)
+* CSS Selector Engine (aka Sizzle... jQuery's selector engine)
 
 Upcoming Features
 -----------------
@@ -33,8 +33,8 @@ Upcoming Features
 Modular?
 --------
 
-Each feature can easily be deleted without affecting any others (except for the CSS methods which do require the basic utilities 'toCamelCase' and 'toHyphens'.
+Most features can easily be deleted without affecting any others (except for the CSS methods which do require the basic utilities 'toCamelCase' and 'toHyphens'). But to be fair if you're looking at this library you're not looking for a library like jQuery to hide all this away from you, so you should be at least fairly comfortable with 'plain vanilla' JavaScript and if you are then you wont have an issue removing any modules that don't fit your requirements.
 
 Size?
 -----
-At the moment it's around 41k original source and approx 12k minified (more with GZIP) + you might not need all these features so it'll be even less.
+At the moment it's around 47k (original source) and approx 12k minified (+ even smaller when you use GZIP!) and on top of that you might not need all the included features so it'll be even less!
