@@ -970,6 +970,12 @@
 				   
 				   return function(el, style, opts) {
 				   	
+				   	if (this.css.hasTransitions === undefined) {
+				   		// These properties are only available after the function has been run once
+					   	this.css.hasTransitions = true;
+					   	this.css.whichTransition = whichTransition;
+				   	}
+				   	
 				   	var el = typeof el == 'string' ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
 				   		 opts = opts || {},
 				   		 cleanWhitespace = style.replace(/\s/i, ''),
