@@ -152,22 +152,23 @@
 		
 		// Add a new property to this object
 		colours.store('white', '#FFFFFF');
-		console.log(colours.lookup('white'));
+		console.log('Dictionary Lookup: ', colours.lookup('white'));
 		
 		// Lookup the value for a specific property in this object
-		console.log(colours.lookup('red'));
+		console.log('Dictionary Lookup: ', colours.lookup('red'));
 		
 		// Does the object contain a property called 'orange'?
-		console.log(colours.contains('orange'));
-		console.log(colours.contains('Orange'));
+		// Notice in the example after that it is a case sensitive search.
+		console.log('Dictionary Contains: ', colours.contains('orange'));
+		console.log('Dictionary Contains: ', colours.contains('Orange'));
 		
 		// Do something for each property in this object
 		colours.each(function(name, val) {
-			console.log(name + ' is ' + val);
+			console.log('Dictionary Each: ', name + ' is ' + val);
 		});
 		
 		// List all properties within this object
-		console.log(colours.names());
+		console.log('Dictionary Names: ', colours.names());
 		
    </script>
 </body>
