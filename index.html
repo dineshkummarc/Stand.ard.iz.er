@@ -20,6 +20,7 @@
 	<script src="Sizzle.js"></script>
 	<script src="Standardizer.js"></script>
    <script type="text/javascript">
+   
    	function time() {
    		console.log('Time is: ' + new Date());
    	}
@@ -135,6 +136,39 @@
 		// "boundGetX()" called, "module" is "this" again, "module.x" is returned
 		boundGetX();
 		// > 81
+		
+// Dictionary utility
+
+		var colourMap = {
+				 red: '#FF0000',
+				 yellow: '#FFFF00',
+				 pink: '#FF00FF',
+				 green: '#00FF00',
+				 orange: '#FF6600',
+				 purple: '#9900FF',
+				 blue: '#0000FF'
+			 }, 
+			 colours = new st.utils.Dictionary(colourMap);
+		
+		// Add a new property to this object
+		colours.store('white', '#FFFFFF');
+		console.log(colours.lookup('white'));
+		
+		// Lookup the value for a specific property in this object
+		console.log(colours.lookup('red'));
+		
+		// Does the object contain a property called 'orange'?
+		console.log(colours.contains('orange'));
+		console.log(colours.contains('Orange'));
+		
+		// Do something for each property in this object
+		colours.each(function(name, val) {
+			console.log(name + ' is ' + val);
+		});
+		
+		// List all properties within this object
+		console.log(colours.names());
+		
    </script>
 </body>
 </html>

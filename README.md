@@ -18,7 +18,7 @@ Features
 * Robust DOM Ready function
 * AJAX handler
 * Event Management (with normalised event object)
-* Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, bind)
+* Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, bind, Dictionary)
 * CSS methods (getAppliedStyle, addClass, removeClass, hasClass, hasTransitions, whichTransition)
 * Animations library (inc. CSS3 Transitions support, with fallback to 'plain vanilla' JavaScript)
 * Event Emitter

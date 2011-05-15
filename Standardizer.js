@@ -33,7 +33,7 @@
 			 * Then processes queued functions.
 			 * 
 			 * @param fn { Function } a function to be executed when the DOM is ready.
-			 * @return anonymous { Function } immediately-invoked function expression which returns a Function to be executed.
+			 * @return anonymous { Function } this method is an immediately-invoked function expression which returns an anonymous Function to be executed.
 			 */
 			domready: (function(){
 
@@ -791,8 +791,23 @@
 
 						};
 					}
-
-				}())
+					
+				}()),
+				
+				/**
+				 * The following method is a Constructor with additional methods attached to the prototype
+				 * which aid every time you need to check whether a property is present in an object.
+				 * We approach an object as just a set of properties.
+				 * And because we can use it to look things up by name, we will call it a 'Dictionary'.
+				 * Lastly, as it's a constructor we'll use the correct naming convention of using a capitalised first letter.
+				 *
+				 * @notes for the prototype object see near bottom of script (after this __standardizer object definition has ended).
+				 * @param {} x
+				 * @return {} x
+				 */
+				Dictionary: function(startValues) {
+					this.values =  startValues || {};
+				}
 				
 			},
 			
@@ -931,10 +946,10 @@
 			 * Original code by @thomasfuch (emile.js)
 			 * IE<9 Opacity support by @kangax
 			 * 
-			 * @param el { Element/Node } 
-			 * @param style { String } 
-			 * @param opts { Object } 
-			 * @param after { Function } 
+			 * @param el { Element/Node } the element that we want to animate
+			 * @param style { String } a string of properties to animation (written in standard CSS syntax)
+			 * @param opts { Object } user configuration settings
+			 * @param after { Function } function to execute after the specified animation has completed
 			 * @return { Function } immediately invoked function expression which returns a new Function
 			 */
 			animation: (function() {
@@ -1335,7 +1350,7 @@
 			 * Modified from: 
 			 * https://github.com/jeromeetienne/microevent.js/blob/master/microevent.js
 			 *
-			 * All methods are added via the prototype chain (see below)
+			 * @notes All methods are added via the prototype chain (see below)
 			 */
 		 	observer: function(){}
 			
@@ -1383,6 +1398,7 @@
 		 * This method will delegate all event emitter functions to the destination object
 		 *
 		 * @param destObject { Object } the object which will support MicroEvent
+		 * @return undefined {  } no explicitly returned value
 		 */
 		__standardizer.observer.mixin = function(destObject) {
 		
@@ -1393,12 +1409,81 @@
 			}
 			
 		}
+		
+		// Here follows is the prototype for the Dictionary Constructor
+		// See: __standardizer.utilities.dictionary
+		__standardizer.utilities.Dictionary.prototype = {
+			
+			/**
+			 * s
+			 * 
+			 * @param name {} x
+			 * @param value {} x
+			 * @return 
+			 */
+			store: function(name, value) {
+				this.values[name] = value;
+			},
+			
+			/**
+			 * s
+			 * 
+			 * @param name {} x
+			 * @return
+			 */
+			lookup: function(name) {
+				return this.values[name];
+			},
+			
+			/**
+			 * s
+			 * 
+			 * @param name {} x
+			 * @return
+			 */
+			contains: function(name) {
+				return Object.prototype.hasOwnProperty.call(this.values, name) && 
+						 Object.prototype.propertyIsEnumerable.call(this.values, name);
+			},
+			
+			/**
+			 * The following method executes a function for every property in this object.
+			 * 
+			 * @param action { Function } a user specified callback function to execute for each property in this object
+			 * @return undefined {  } no explicitly returned value
+			 */
+			each: function(action) {
+				var object = this.values;
+				for (var property in object) {
+					if (object.hasOwnProperty(property)) {
+						action(property, object[property]);
+					}
+				}
+			},
+			
+			/**
+			 * The following method returns an Array of all property names within an object.
+			 * 
+			 * @return names { Array } a list of all property names in this object
+			 */
+			names: function() {
+				var names = [];
+				
+				this.each(function(name, value) {
+					names.push(name);
+				});
+				
+				return names;
+			}
+			
+		};
 	
 		// Return public API
 		return {
 			load: __standardizer.domready,
 			ajax: __standardizer.ajax,
 			events: __standardizer.events,
+			utils: __standardizer.utilities,
 			css: __standardizer.css,
 			observe: __standardizer.observer,
 			anim: __standardizer.animation,
