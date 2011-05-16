@@ -28,6 +28,15 @@
 		st.load(time);
 		
 		st.ajax({
+			url: 'JSON.php',
+			dataType: 'json',
+			onSuccess: function(resp) {
+				// {"a":1,"b":2,"c":3,"d":4,"e":5}
+				console.log(resp['a'], resp['b'], resp['c'], resp['d'], resp['e']);
+			}
+		});
+		
+		st.ajax({
 			url: 'Standardizer.js',
 
 			onError: function(message) {
@@ -83,9 +92,7 @@
 		
 // Publish/Subscribe Example
 		
-		/**
-		* Ticker is a class periodically sending out dummy tick events
-		*/
+		// Ticker is a class periodically sending out dummy tick events
 		var Ticker = function (interval) {
 			var self	= this;
 			window.setInterval(function() {
@@ -93,9 +100,7 @@
 			}, 5000);
 		};
 		
-		/**
-		 * Make Ticker support event emitter methods
-		 */
+		// Make Ticker support event emitter methods
 		st.observe.mixin(Ticker);
 
 		// Create a new instance of Ticker
