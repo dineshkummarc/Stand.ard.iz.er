@@ -390,9 +390,10 @@
 					
 				}
 				
-				// Initalize a callback which will fire within the timeout range, cancelling the request (if it has not already occurred)
+				// Initalize a callback which will fire within the timeout range, also cancelling the request (if it has not already occurred)
 				window.setTimeout(function() {
 					requestDone = true;
+					config.onComplete();
 				}, config.timeout);
 				
 				// Watch for when the state of the document gets updated
@@ -1091,9 +1092,9 @@
 					   	this.css.whichTransition = whichTransition;
 				   	}
 				   	
-				   	var el = typeof el == 'string' ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
+				   	var el = (typeof el == 'string') ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
 				   		 opts = opts || {},
-				   		 cleanWhitespace = style.replace(/\s/i, ''),
+				   		 cleanWhitespace = style.replace(/\s/ig, ''),
 				   		 settings = cleanWhitespace.split(';'),
 				   		 len = settings.length,
 				   		 arr = [],
@@ -1144,7 +1145,7 @@
 				   		clearTimeout(polling);
 				   		el.removeAttribute('data-anim');
 				   		opts.after && opts.after(); // execute callback if one has been provided
-				   	}, (opts.duration+500)); // I've added an extra half a second onto the timeout in case the animation was slow
+				   	}, (opts.duration + 200)); // I've added an extra 200 milliseconds onto the timeout in case the animation was slow
 				   	
 				   	// Check for transition end and then run callback (if one provided)
 				   	function checkTransitionEnd(e) {
@@ -1349,7 +1350,7 @@
 					
 					return function(el, style, opts, after) {
 						// Either get the element by specified ID or just use the element node passed through
-						el = typeof el == 'string' ? document.getElementById(el) : el;
+						el = (typeof el == 'string') ? document.getElementById(el) : el;
 						opts = opts || {};
 						
 						// Add custom data-* attribute to tell when element is animating

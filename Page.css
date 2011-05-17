@@ -1,9 +1,13 @@
+body {
+	font-family: Arial;
+}
+
 #anim1 {
 	background:#f00;
 	left: 20px;
 	opacity: 0; /* IE equivalent */filter:alpha(opacity=0);
 	position: absolute;
-	top: 180px;
+	top: 250px;
 }
 
 #anim2 {
@@ -11,5 +15,34 @@
 	border: 0px solid #00ff00;
 	position: absolute;
 	left: 20px;
-	top: 200px;
+	top: 270px;
+}
+
+#container {
+	margin: auto;
+	width: 300px;
+}
+
+#container h2,
+#container p {
+	margin: 0 0 10px;
+}
+
+#container h2 {
+	background-color: pink;
+	font-size: 120%;
+	padding: 5px 10px;
+	width: 200px;
+}
+
+.dd {
+	border: 1px solid red;
+	margin-bottom: 20px;
+	overflow: hidden;
+	padding: 10px;
+	width: 198px;
+}
+
+.cursor {
+	cursor: pointer;
 }
