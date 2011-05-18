@@ -689,19 +689,22 @@
 				 */
 			 	getCharacterFromKey: function(event) {
 				 
-					var character = ""; 
+					var character = "",
+						 keycode; 
 					
 					// Internet Explorer 
 					if (event.keyCode) {
+						keycode = event.keyCode;
 						character = String.fromCharCode(event.keyCode); 
 					} 
 					
 					// W3C 
 					else if (event.which) {
+						keycode = event.which;
 						character = String.fromCharCode(event.which); 
 					} 
 					
-					return character;
+					return { code:keycode, character:character };
 					
 				},
 				
@@ -971,6 +974,11 @@
 					// Get a list of the current CSS class names applied to the element 
 					var classNames = this.getArrayOfClassNames(element); 
 					
+					// Make sure the class doesn't already exist on the element
+				   if (this.hasClass(element, className)) {
+				   	return;
+				   }
+				   
 					// Add the new class name to the list 
 					classNames.push(className);
 					
