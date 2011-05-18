@@ -43,7 +43,7 @@
 	<script src="Sizzle.js"></script>
 	<script src="Standardizer.js"></script>
    <script type="text/javascript">
-   	  	
+   
    	function showDropDown(e) {
    		
    		var targ = e.target,
@@ -51,7 +51,20 @@
    						? targ.nextSibling.nextSibling 
 							: targ.nextSibling,
 				 ddStyle = dd.style,
-				 elemHeight = dd.getAttribute('data-height');
+				 elemHeight = parseInt(dd.getAttribute('data-height')),
+				 useTransitions = true;
+			
+			// FUGLY user-agent sniff for Firefox 4
+			var nua = navigator.userAgent;
+			if (nua.toLowerCase().indexOf('firefox') !== -1) {
+				var check = nua.split('/'),
+					 ff = parseInt(check[check.length-1]) >= 4;
+				
+				// Tell browser to use jsAnimation for Firefox 4 when ustilising 'drop downs'
+				if (ff) {
+					useTransitions = false;
+				}
+			}
 			
 			// If element is hidden...
 			if (ddStyle.display === 'none') {
@@ -62,10 +75,12 @@
 				
 				// CSS Transition engines seem to get stuck trying to animate and end up just showing the final results of the animation
 				// Using a timeout, unlocks the engine for a brief moment so it can re-render the animation as it should do
-				window.setTimeout(function(){
+				window.setTimeout(function() {
 					
-					// BUG: Firefox4 (which uses CSS3 Transitions) has an issue re-setting the margin-bottom property?
+					// BUG: Firefox4 (which uses CSS3 Transitions) has an issue re-setting individual margin properties (e.g. margin-bottom).
+					// So I've had to look at re-writing the animation library so that a developer can specify a setting and choose the plain js fallback animation code instead of CSS transitions
 					st.anim(dd, 'height:' + elemHeight + 'px; margin-bottom:20px; opacity:1; padding-bottom:10px; padding-top:10px;', { 
+						cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
 						duration:'500', 
 						easing: 'ease-In'
 					});
@@ -78,6 +93,7 @@
 			else {
 				
 				st.anim(dd, 'height:0px; margin-bottom:0px; opacity:0; padding-bottom:0px; padding-top:0px;', { 
+					cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
 					duration:'500', 
 					easing: 'ease-In',
 					after: function() {
@@ -129,7 +145,7 @@
    	}
    	
    	// Wait for DOMContentLoaded event
-   	st.load(apply);   	
+   	st.load(apply);
 		
    </script>
 </body>
