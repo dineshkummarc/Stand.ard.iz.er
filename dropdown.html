@@ -44,6 +44,7 @@
 	<script src="Standardizer.js"></script>
    <script type="text/javascript">
    
+   	// This function does the majority of the login for the drop down elements...
    	function showDropDown(e) {
    		
    		var targ = e.target,
@@ -61,6 +62,10 @@
 					 ff = parseInt(check[check.length-1]) >= 4;
 				
 				// Tell browser to use jsAnimation for Firefox 4 when ustilising 'drop downs'
+				// This is because Firefox has issues with applying individual 'margin' properties.
+				// It can be 'partially' worked around when using just 'margin' (still not good though), 
+				// but regardless, the jsAnimation API requires individual properties not multi-purpose 
+				// e.g. it doesn't like 'margin', it instead needs 'margin-top, margin-bottom'...etc
 				if (ff) {
 					useTransitions = false;
 				}
@@ -85,7 +90,7 @@
 						easing: 'ease-In'
 					});
 					
-				}, 100);
+				}, 50);
 				
 			} 
 			
@@ -107,6 +112,7 @@
 			
    	}
    	
+   	// This function simply grabs the elements, hides them and then sets the relevant event handlers...	
    	function apply() {
    		var dd = document.getElementById('container').getElementsByTagName('div'),
    			 len = dd.length,
