@@ -1,0 +1,158 @@
+<!doctype html>
+<html dir="ltr" lang="en">
+<head>
+	<title></title>
+   <meta charset="utf-8">
+   <meta name="author" content="Mark McDonnell" />
+   <link rel="stylesheet" href="Page.css" />
+</head>
+<body>
+
+	<div id="container">
+		<h2>Title 1</h2>
+		<div class="dd">
+			<p>My Drop Down Content 1.</p>
+			<p>a</p>
+		</div>
+		
+		<h2>Title 2</h2>
+		<div class="dd">
+			<p>My Drop Down Content 2.</p>
+			<p>a</p>
+			<p>b</p>
+		</div>
+		
+		<h2>Title 3</h2>
+		<div class="dd">
+			<p>My Drop Down Content 3.</p>
+			<p>a</p>
+			<p>b</p>
+			<p>c</p>
+		</div>
+		
+		<h2>Title 4</h2>
+		<div class="dd">
+			<p>My Drop Down Content 4.</p>
+			<p>a</p>
+			<p>b</p>
+			<p>c</p>
+			<p>d</p>
+		</div>
+	</div>
+	
+	<script src="Sizzle.js"></script>
+	<script src="Standardizer.js"></script>
+   <script type="text/javascript">
+   
+   	// This function does the majority of the login for the drop down elements...
+   	function showDropDown(e) {
+   		
+   		var targ = e.target,
+   			 dd = (targ.nextSibling.nodeType !== 1) 
+   						? targ.nextSibling.nextSibling 
+							: targ.nextSibling,
+				 ddStyle = dd.style,
+				 elemHeight = parseInt(dd.getAttribute('data-height')),
+				 useTransitions = true;
+			
+			// FUGLY user-agent sniff for Firefox 4
+			var nua = navigator.userAgent;
+			if (nua.toLowerCase().indexOf('firefox') !== -1) {
+				var check = nua.split('/'),
+					 ff = parseInt(check[check.length-1]) >= 4;
+				
+				// Tell browser to use jsAnimation for Firefox 4 when ustilising 'drop downs'
+				// This is because Firefox has issues with applying individual 'margin' properties.
+				// It can be 'partially' worked around when using just 'margin' (still not good though), 
+				// but regardless, the jsAnimation API requires individual properties not multi-purpose 
+				// e.g. it doesn't like 'margin', it instead needs 'margin-top, margin-bottom'...etc
+				if (ff) {
+					useTransitions = false;
+				}
+			}
+			
+			// If element is hidden...
+			if (ddStyle.display === 'none') {
+			
+				// Elements must have a display setting via style attribute 
+				// as the js fallback animation library can't pick up the style settings otherwise
+				ddStyle.display = 'block';
+				
+				// CSS Transition engines seem to get stuck trying to animate and end up just showing the final results of the animation
+				// Using a timeout, unlocks the engine for a brief moment so it can re-render the animation as it should do
+				window.setTimeout(function() {
+					
+					// BUG: Firefox4 (which uses CSS3 Transitions) has an issue re-setting individual margin properties (e.g. margin-bottom).
+					// So I've had to look at re-writing the animation library so that a developer can specify a setting and choose the plain js fallback animation code instead of CSS transitions
+					st.anim(dd, 'height:' + elemHeight + 'px; margin-bottom:20px; opacity:1; padding-bottom:10px; padding-top:10px;', { 
+						cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
+						duration:'500', 
+						easing: 'ease-In'
+					});
+					
+				}, 50);
+				
+			} 
+			
+			// If element is visible...
+			else {
+				
+				st.anim(dd, 'height:0px; margin-bottom:0px; opacity:0; padding-bottom:0px; padding-top:0px;', { 
+					cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
+					duration:'500', 
+					easing: 'ease-In',
+					after: function() {
+						// Although height and opacity have made the element 'practically' hidden, 
+						// the element still requires display:none to be set.
+						ddStyle.display = 'none';
+					}
+				});
+				
+			}
+			
+   	}
+   	
+   	// This function simply grabs the elements, hides them and then sets the relevant event handlers...	
+   	function apply() {
+   		var dd = document.getElementById('container').getElementsByTagName('div'),
+   			 len = dd.length,
+   			 i = len,
+   			 j,
+   			 parents = [];
+   		
+   		while (i--) {
+   			// Cache lookup
+   			var ddStyle = dd[i].style;
+   			
+   			// Store the original height values for each drop down
+   			dd[i].setAttribute('data-height', dd[i].clientHeight-20);
+   			
+   			// Hide all drop down <div> elements
+   			ddStyle.display = 'none';
+   			ddStyle.height = '0px';
+				ddStyle.opacity = '0';
+				ddStyle.filter = 'alpha(opacity=0)';
+				
+				// We remove the bottom margin (originally set via CSS) as it causes an extra gap to show when animating.
+				ddStyle.marginBottom = '-20px';
+   			
+   			// Push each <div>'s parent element into an Array
+   			(dd[i].previousSibling.nodeType !== 1) 
+   				? parents.push(dd[i].previousSibling.previousSibling) 
+   				: parents.push(dd[i].previousSibling);
+   		}
+   		
+   		// Loop through the array and bind click handlers
+   		j = parents.length;
+   		while (j--) {
+   			st.css.addClass(parents[j], 'cursor');
+   			st.events.add(parents[j], 'click', showDropDown);
+   		}
+   	}
+   	
+   	// Wait for DOMContentLoaded event
+   	st.load(apply);
+		
+   </script>
+</body>
+</html>

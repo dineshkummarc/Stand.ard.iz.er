@@ -25,7 +25,80 @@
 				return v > 4 ? v : undef;
 			}()),
 			
-			// Errors
+			/**
+			 * The following method is a direct copy from Douglas Crockfords json2.js script (https://github.com/douglascrockford/JSON-js/blob/master/json2.js)
+			 * It is used to replicate the native JSON.parse method found in most browsers.
+			 * e.g. IE<8 hasn't got a native implementation.
+			 * 
+			 * @return { Object } a JavaScript Object Notation (JSON) compatible object
+			 */
+			json: function(text) {
+				// The parse method takes a text and returns a JavaScript value if the text is a valid JSON text.
+				var j,
+					 cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+				
+				function walk(holder, key) {
+					// The walk method is used to recursively walk the resulting structure so that modifications can be made.
+					var k, v, value = holder[key];
+					if (value && typeof value === 'object') {
+						for (k in value) {
+							if (Object.prototype.hasOwnProperty.call(value, k)) {
+								v = walk(value, k);
+								if (v !== undefined) {
+									value[k] = v;
+								} else {
+									delete value[k];
+								}
+							}
+						}
+					}
+					return reviver.call(holder, key, value);
+				}
+				
+				// Parsing happens in four stages. In the first stage, we replace certain
+				// Unicode characters with escape sequences. JavaScript handles many characters
+				// incorrectly, either silently deleting them, or treating them as line endings.
+				text = String(text);
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+            	text = text.replace(cx, function(a) {
+               	return '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+					});
+            }
+            
+            // In the second stage, we run the text against regular expressions that look
+				// for non-JSON patterns. We are especially concerned with '()' and 'new'
+				// because they can cause invocation, and '=' because it can cause mutation.
+				// But just to be safe, we want to reject all unexpected forms.
+				
+				// We split the second stage into 4 regexp operations in order to work around
+				// crippling inefficiencies in IE's and Safari's regexp engines. First we
+				// replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
+				// replace all simple value tokens with ']' characters. Third, we delete all
+				// open brackets that follow a colon or comma or that begin the text. Finally,
+				// we look to see that the remaining characters are only whitespace or ']' or
+				// ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.				
+				if (/^[\],:{}\s]*$/
+					.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+				   .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+				   .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+				
+				// In the third stage we use the eval function to compile the text into a
+				// JavaScript structure. The '{' operator is subject to a syntactic ambiguity
+				// in JavaScript: it can begin a block or an object literal. We wrap the text
+				// in parens to eliminate the ambiguity.				
+					j = eval('(' + text + ')');
+				
+				// In the optional fourth stage, we recursively walk the new structure, passing
+				// each name/value pair to a reviver function for possible transformation.				
+				   return typeof reviver === 'function' ? walk({'': j}, '') : j;
+				}
+				
+				// If the text is not JSON parseable, then a SyntaxError is thrown.				
+				throw new SyntaxError('JSON.parse');
+			},
+			
+			// Errors for AJAX request
 			errors: [],
 			
 			/**
@@ -235,7 +308,7 @@
 					onSuccess: settings.onSuccess || function(){},
 				
 					// The data type that'll be returned from the server
-					// the default is simply to determine what data was returned from the and act accordingly.
+					// the default is simply to determine what data was returned from the server and act accordingly.
 					dataType: settings.dataType || ''
 				};
 				
@@ -270,29 +343,57 @@
 				}
 				
 				// Extract the correct data from the HTTP response
-				function httpData(r, type) {
-				
-					// Get the content-type header
-					var ct = r.getResponseHeader("content-type"),
-						 data = !type && ct && ct.indexOf("xml") >= 0; // If no default type was provided, determine if some form of XML was returned from the server
+				function httpData(xhr, type) {
 					
-					// Get the XML Document object if XML was returned from the server,
-					// otherwise return the text contents returned by the server
-					data = (type == "xml" || data) ? r.responseXML : r.responseText;
+					if (type === 'json') {
+						// Make sure JSON parser is natively supported
+						if (window.JSON !== undefined) {
+							return JSON.parse(xhr.responseText);
+						} 
+						// IE<8 hasn't a native JSON parser so we'll need to eval() the code - dangerous I know
+						else {
+							return __standardizer.json(xhr.responseText);
+							//return eval('(' + xhr.responseText + ')');
+						}
+					} 
 					
+					/*
 					// If the specified type is "script", execute the returned text response as if it was JavaScript
-					if (type == "script") {
-						eval.call(window, data);
+					else if (type === 'script') {
+						eval.call(window, xhr.responseText);
+					}
+					*/
+					
+					//
+					else if (type === 'html') {
+						return xhr.responseText;
 					}
 					
-					// Return the response data (either an XML Document or a text string)
-					return data;
+					//
+					else if (type === 'xml') {
+						return xhr.responseXML;
+					}
+					
+					// Attempt to work out the content type
+					else {
+						// Get the content-type header
+						var contentType = xhr.getResponseHeader("content-type"), 
+							 data = !type && contentType && contentType.indexOf("xml") >= 0; // If no default type was provided, determine if some form of XML was returned from the server
+						
+						// Get the XML Document object if XML was returned from the server,
+						// otherwise return the text contents returned by the server
+						data = (type == "xml" || data) ? xhr.responseXML : xhr.responseText;	
+						
+						// Return the response data (either an XML Document or a text string)
+						return data;
+					}
 					
 				}
 				
-				// Initalize a callback which will fire within the timeout range, cancelling the request (if it has not already occurred)
+				// Initalize a callback which will fire within the timeout range, also cancelling the request (if it has not already occurred)
 				window.setTimeout(function() {
 					requestDone = true;
+					config.onComplete();
 				}, config.timeout);
 				
 				// Watch for when the state of the document gets updated
@@ -304,11 +405,11 @@
 						// Check to see if the request was successful
 						if (httpSuccess(xhr)) {
 							// Execute the success callback
-							config.onSuccess(httpData(xhr, config.type));
+							config.onSuccess(httpData(xhr, config.dataType));
 						}
 						// Otherwise, an error occurred, so execute the error callback
 						else {
-							config.onError(httpData(xhr, config.type));
+							config.onError(httpData(xhr, config.dataType));
 						}
 			
 						// Call the completion callback
@@ -569,10 +670,13 @@
 					// Internet Explorer value is srcElement, W3C value is target 
 					var target = event.srcElement || event.target; 
 					
-					// Fix legacy Safari bug which reports events occurring on a text node instead of an element node 
-					if (target.nodeType == 3) { // 3 denotes a text node 
-						target = target.parentNode; // Get parent node of text node 
-					} 
+					// Window resize event causes 'undefined' value for target
+					if (target !== undefined) {
+						// Fix legacy Safari bug which reports events occurring on a text node instead of an element node 
+						if (target.nodeType == 3) { // 3 denotes a text node 
+							target = target.parentNode; // Get parent node of text node 
+						}
+					}
 					
 					// Return the element node the event occurred on 
 					return target;
@@ -588,19 +692,22 @@
 				 */
 			 	getCharacterFromKey: function(event) {
 				 
-					var character = ""; 
+					var character = "",
+						 keycode; 
 					
 					// Internet Explorer 
 					if (event.keyCode) {
+						keycode = event.keyCode;
 						character = String.fromCharCode(event.keyCode); 
 					} 
 					
 					// W3C 
 					else if (event.which) {
+						keycode = event.which;
 						character = String.fromCharCode(event.which); 
 					} 
 					
-					return character;
+					return { code:keycode, character:character };
 					
 				},
 				
@@ -870,6 +977,11 @@
 					// Get a list of the current CSS class names applied to the element 
 					var classNames = this.getArrayOfClassNames(element); 
 					
+					// Make sure the class doesn't already exist on the element
+				   if (this.hasClass(element, className)) {
+				   	return;
+				   }
+				   
 					// Add the new class name to the list 
 					classNames.push(className);
 					
@@ -956,16 +1068,418 @@
 				var thisBody = document.body || document.documentElement, 
 					 thisStyle = thisBody.style, 
 					 vendors,
-					 support,
-					 whichTransition;
+					 hasCSSTransitions,
+					 whichTransition,
+					 cssTransitionsAnimation,
+					 jsAnimation,
+					 chosenAnimation;
 				
-				support = thisStyle.WebkitTransition !== undefined || 
-							 thisStyle.MozTransition !== undefined || 
-							 thisStyle.OTransition !== undefined || 
-							 thisStyle.msTransition !== undefined || 
-							 thisStyle.transition !== undefined;
+				hasCSSTransitions = thisStyle.WebkitTransition !== undefined || 
+							 			  thisStyle.MozTransition !== undefined || 
+							 			  thisStyle.OTransition !== undefined || 
+							 			  thisStyle.msTransition !== undefined || 
+							 			  thisStyle.transition !== undefined;
 				
-				if (support) {
+				// CSS Transitions Animation Function...
+				
+				cssTransitionsAnimation = function(el, style, opts) {
+					var opts = opts || {};
+					
+					// Assume the user wants CSS Transitions by default
+					if (opts.cssTransition === undefined) {
+						opts.cssTransition = true;
+					}
+					
+					// If the user has specified for no CSS transitions to be used then rewrite function to use jsAnimation
+					if (!opts.cssTransition) {
+						chosenAnimation = jsAnimation;
+						chosenAnimation(el, style, opts);
+						return;
+					}					
+					
+					// Otherwise continue with CSS Transition specific code...
+					
+					if (this.css.hasTransitions === undefined) {
+			   		// These properties are only available after the function has been run once
+				   	this.css.hasTransitions = true;
+				   	this.css.whichTransition = whichTransition;
+			   	}
+			   	
+			   	var el = (typeof el == 'string') ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
+			   		 cleanWhitespace = style.replace(/\s/ig, ''),
+			   		 settings = cleanWhitespace.split(';'),
+			   		 len = settings.length,
+			   		 arr = [],
+			   		 duration = (opts.duration) ? ((opts.duration / 1000) + 's') : '0.5s',
+			   		 easing = opts.easing || 'linear',
+			   		 compileString = '',
+			   		 i,
+			   		 polling,
+			   		 animationComplete = false;
+			   	
+			   	// Create an Array of settings...
+			   	// ["left", "-176px"] ["opacity", "0.5"]
+			   	for (i = 0; i < len-1; i++) {
+			   		arr.push(settings[i].split(':'));
+			   	}
+			   	
+			   	// Compile transition string
+			   	for (i = 0, len = arr.length; i < len; i++) {
+			   		compileString += arr[i][0] + ' ' + duration + ' ' + easing;
+			   		
+			   		// Only add trailing space as long as it's not the last property being set
+			   		if (i+1 !== len) {
+			   			compileString += ', ';
+			   		}
+			   	}
+			   	
+			   	// Set the relevant transition (e.g. WebkitTransition) to have a specific value
+			   	el.style[whichTransition] = compileString;
+			   	
+			   	// Add custom data-* attribute to tell when element is animating
+					el.setAttribute('data-anim', 'true');
+			   	
+			   	// Loop through each property the user has specified to be animated and set the 'style' property manually
+			   	for (i = 0; i <= len; i++) {
+			   		for (item in arr) {
+			   			el.style[arr[item][0]] = arr[item][1];
+			   		}
+			   	}
+			   	
+			   	el.addEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
+			   	el.addEventListener('transitionend', checkTransitionEnd, false); // Mozilla
+			   	el.addEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
+			   	
+			   	// Some browsers support CSS3 transitions but NOT any event listeners for the transition's end!
+			   	// So we'll have to use polling to work around this (not ideal I know)
+			   	polling = window.setTimeout(function() {
+			   		animationComplete = true;
+			   		clearTimeout(polling);
+			   		el.removeAttribute('data-anim');
+			   		opts.after && opts.after(); // execute callback if one has been provided
+			   	}, (opts.duration + 200)); // I've added an extra 200 milliseconds onto the timeout in case the animation was slow
+			   	
+			   	// Check for transition end and then run callback (if one provided)
+			   	function checkTransitionEnd(e) {
+			   		if (!animationComplete) {
+			   			clearTimeout(polling);
+			   			animationComplete = true;
+			   			el.removeAttribute('data-anim');
+			   			opts.after && opts.after(); // execute callback if one has been provided
+			   		}
+			   		
+						el.removeEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
+			   		el.removeEventListener('transitionend', checkTransitionEnd, false); // Mozilla
+			   		el.removeEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
+			   	}
+				};
+				
+				// Js Animation Function...
+				
+				jsAnimation = function(el, style, opts, after) {
+					var parseEl = document.createElement('div'),
+						 isIE = !!window.attachEvent && !window.opera,
+						 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
+					 				 'borderRightColor borderRightWidth borderSpacing borderTopColor borderTopWidth bottom color fontSize '+
+					 				 'fontWeight height left letterSpacing lineHeight marginBottom marginLeft marginRight marginTop maxHeight '+
+					 				 'maxWidth minHeight minWidth opacity outlineColor outlineOffset outlineWidth paddingBottom paddingLeft '+
+					 				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' '),
+					
+					// Internet Explorer < 9 support for Opacity (via @kangax)...
+					
+					 				 supportsOpacity = typeof parseEl.style.opacity == 'string',
+					 				 supportsFilters = typeof parseEl.style.filter == 'string',
+					 				 reOpacity = /alpha\(opacity=([^\)]+)\)/,
+					 				 setOpacity = function(){ },
+					 				 getOpacityFromComputed = function(){ return '1'; };
+					 				 
+					if (supportsOpacity) {
+						setOpacity = function(el, value) {
+							el.style.opacity = value;
+						};
+						
+						getOpacityFromComputed = function(computed) { 
+							return computed.opacity; 
+						};
+					}
+					else if (supportsFilters) {
+						setOpacity = function(el, value) {
+							var es = el.style;
+							
+							// If the element doesn't have 'hasLayout' triggered then make sure it is forced via the 'zoom' style hack
+							if(!el.currentStyle.hasLayout) { 
+								es.zoom = 1;						
+							}
+							
+							if (reOpacity.test(es.filter)) {
+								value = value >= 0.9999 ? '' : ('alpha(opacity=' + (value * 100) + ')');
+								es.filter = es.filter.replace(reOpacity, value);
+							} else {
+								es.filter += ' alpha(opacity=' + (value * 100) + ')';
+							}
+						};
+						
+						getOpacityFromComputed = function(comp) {
+							var m = comp.filter.match(reOpacity);
+							return (m ? (m[1] / 100) : 1) + '';
+						};
+					}
+					
+					var easings = {
+						easeOut: function(pos) {
+							return Math.sin(pos * Math.PI / 2);
+						},
+						
+						easeOutStrong: function(pos) {
+							return (pos == 1) ? 1 : 1 - Math.pow(2, -10 * pos);
+						},
+						
+						easeIn: function(pos) {
+							return pos * pos;
+						},
+						
+						easeInStrong: function(pos) {
+							return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
+						},
+						
+						bounce: function(pos) {
+							if (pos < (1 / 2.75)) {
+								return 7.5625 * pos * pos;
+							}
+							if (pos < (2 / 2.75)) {
+								return 7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75;
+							}
+							if (pos < (2.5 / 2.75)) {
+								return 7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375;
+							}
+							return 7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375;
+						},
+						
+						linear: function(pos) {
+							return (-Math.cos(pos * Math.PI) / 2) + 0.5;
+						},
+						
+						sine: function(pos) {
+							return (Math.sin(pos * Math.PI / 2));
+						},
+						
+						flicker: function(pos) {
+							return ((-Math.cos(pos * Math.PI) / 4) + 0.75) + Math.random() * 0.25;
+						},
+						
+						wobble: function(pos) {
+							return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
+						},
+						
+						pulsate: function(pos) {
+							return (0.5 + Math.sin(17 * pos) / 2);
+						},
+						
+						expo: function(pos) {
+							return Math.pow(2, 8 * (pos - 1));
+						},
+						
+						quad: function(pos) {
+							return Math.pow(pos, 2);
+						},
+						
+						cube: function(pos) {
+							return Math.pow(pos, 3);
+						}
+					};
+					
+					function interpolate(source, target, pos) { 
+						return (source+(target-source)*pos).toFixed(3); 
+					}
+					
+					function s(str, p, c) { 
+						return str.substr(p,c||1);
+					}
+					
+					function color(source,target,pos) {
+						var i = 2, 
+							 j, 
+							 c, 
+							 tmp, 
+							 v = [], 
+							 r = [];
+						
+						while (j=3,c=arguments[i-1],i--) {					
+							if (s(c,0)=='r') { 
+								c = c.match(/\d+/g); while(j--) v.push(~~c[j]);
+							}
+							else {
+								if(c.length==4) {
+									c='#'+s(c,1)+s(c,1)+s(c,2)+s(c,2)+s(c,3)+s(c,3);
+								}
+								while (j--) {
+									v.push(parseInt(s(c,1+j*2,2), 16)); 
+								}
+							}
+						}
+						
+						while (j--) { 
+							tmp = ~~(v[j+3]+(v[j]-v[j+3])*pos); r.push(tmp<0?0:tmp>255?255:tmp); 
+						}
+						
+						return 'rgb('+r.join(',')+')';
+					}
+					
+					function parse(val) {
+						var v = parseFloat(val), 
+							 q = val.replace(/^[\-\d\.]+/,'');
+						
+						// If a colour value...
+						if (isNaN(v)) {
+							return { v: q, f: color, u: ''};
+						} else {
+							return { v: v, f: interpolate, u: q };
+						}
+					}
+					
+					function normalize(style) {
+						var css, 
+							 rules = {}, 
+							 i = props.length, 
+							 v;
+							 
+						parseEl.innerHTML = '<div style="'+style+'"></div>';
+						
+						css = parseEl.childNodes[0].style;
+						
+						while(i--) {
+							
+							if(v = css[props[i]]) {
+								rules[props[i]] = parse(v, props[i]);
+							}
+						}
+						
+						return rules;
+					}
+					
+					// Either get the element by specified ID or just use the element node passed through
+					var el = (typeof el == 'string') ? document.getElementById(el) : el,
+						 opts = opts || {};
+					
+					// Add custom data-* attribute to tell when element is animating
+					el.setAttribute('data-anim', 'true');
+					
+					var target = normalize(style), 
+						 comp = el.currentStyle ? el.currentStyle : getComputedStyle(el, null),
+						 prop, 
+						 current = {}, 
+						 start = +new Date, 
+						 dur = parseInt(opts.duration) || 200, 
+						 finish = start+dur, 
+						 interval,
+						 curValue,
+						 easing = opts.easing || easings.linear; // 'linear' is actually 'cosine' but changed name for compatibility with CSS3 transitions (linear is the default easing effect)
+						 
+					// Modification made to include different easing styles
+					switch (easing) {
+						case 'ease-Out':
+							easing = easings.easeOut;
+							break;
+						case 'easeOutStrong':
+							easing = easings.easeOutStrong;
+							break;
+						case 'ease-In':
+							easing = easings.easeIn;
+							break;
+						case 'easeInStrong':
+							easing = easings.easeInStrong;
+							break;
+						case 'bounce':
+							easing = easings.bounce;
+							break;
+						case 'linear':
+							easing = easings.linear;
+							break;
+						case 'sine':
+							easing = easings.sine;
+							break;
+						case 'flicker':
+							easing = easings.flicker;
+							break;
+						case 'wobble':
+							easing = easings.wobble;
+							break;
+						case 'pulsate':
+							easing = easings.pulsate;
+							break;
+						case 'expo':
+							easing = easings.expo;
+							break;
+						case 'quad':
+							easing = easings.quad;
+							break;
+						case 'cube':
+							easing = easings.cube;
+							break;
+					}
+					
+					for (val in target) {
+						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
+					}
+					
+					// Code to position element
+					function render() {
+						var time = +new Date, 
+							 pos = time>finish ? 1 : (time-start)/dur,
+							 animating = true;
+					  
+						for(prop in target) {
+							curValue = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
+							if (prop === 'opacity') {
+								setOpacity(el, curValue);
+							} else {
+								el.style[prop] = curValue;
+							}
+						}
+						
+						if(time > finish) { 
+							el.removeAttribute('data-anim');
+							clearInterval(interval); 
+							opts.after && opts.after(); 
+							after && setTimeout(after, 1);
+						}
+					}
+					
+					interval = setInterval(render, 10);
+				};
+				
+				// CSS Transitions Specific Set-up Code
+				
+				if (hasCSSTransitions) {
+					vendors = {
+				    	'WebkitTransition': thisStyle.WebkitTransition !== undefined,
+				    	'MozTransition': thisStyle.MozTransition !== undefined,
+				    	'OTransition': thisStyle.OTransition !== undefined,
+				    	'msTransition': thisStyle.msTransition !== undefined,
+				    	'transition': thisStyle.transition !== undefined
+					}
+					
+					for (prop in vendors) {
+				   	if (vendors.hasOwnProperty(prop)) {
+				   		if (vendors[prop]) {
+				   			whichTransition = prop;
+				   		}
+				   	}
+				   }
+					
+					chosenAnimation = cssTransitionsAnimation;
+				} 
+				
+				// JsAnimation Specific Set-up Code
+				
+				else {
+					chosenAnimation = jsAnimation;
+				}
+				
+				return chosenAnimation;
+				
+				/*
+				if (hasCSSTransitions) {
 					
 					vendors = {
 				    	'WebkitTransition': thisStyle.WebkitTransition !== undefined,
@@ -991,9 +1505,9 @@
 					   	this.css.whichTransition = whichTransition;
 				   	}
 				   	
-				   	var el = typeof el == 'string' ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
+				   	var el = (typeof el == 'string') ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
 				   		 opts = opts || {},
-				   		 cleanWhitespace = style.replace(/\s/i, ''),
+				   		 cleanWhitespace = style.replace(/\s/ig, ''),
 				   		 settings = cleanWhitespace.split(';'),
 				   		 len = settings.length,
 				   		 arr = [],
@@ -1044,7 +1558,7 @@
 				   		clearTimeout(polling);
 				   		el.removeAttribute('data-anim');
 				   		opts.after && opts.after(); // execute callback if one has been provided
-				   	}, (opts.duration+500)); // I've added an extra half a second onto the timeout in case the animation was slow
+				   	}, (opts.duration + 200)); // I've added an extra 200 milliseconds onto the timeout in case the animation was slow
 				   	
 				   	// Check for transition end and then run callback (if one provided)
 				   	function checkTransitionEnd(e) {
@@ -1249,7 +1763,7 @@
 					
 					return function(el, style, opts, after) {
 						// Either get the element by specified ID or just use the element node passed through
-						el = typeof el == 'string' ? document.getElementById(el) : el;
+						el = (typeof el == 'string') ? document.getElementById(el) : el;
 						opts = opts || {};
 						
 						// Add custom data-* attribute to tell when element is animating
@@ -1339,7 +1853,7 @@
 						interval = setInterval(render, 10);
 					};
 
-				}
+				}*/
 				
 			}()),
 			
