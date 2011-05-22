@@ -893,6 +893,26 @@
 				},
 				
 				/**
+				 * The following method creates a new element or returns a copy of an element already created by this script.
+				 *
+				 * @param tagname { String } element to be created/copied
+				 * @return { Element/Node } the newly created element
+				 */
+				createElement: function(tagname) {
+					// Memorize previous elements created
+					this.memory = this.memory || {};
+					
+					if (tagname in this.memory) {
+						// If we've already created an element of the specified kind then duplicate it
+						return this.memory[tagname].cloneNode(true);
+					} else {
+						// Create new instance of specified element and store it
+						this.memory[tagname] = document.createElement(tagname);
+						return this.memory[tagname].cloneNode(true);
+					}
+				},
+				
+				/**
 				 * The following method isn't callable via the 'utilities' namespace.
 				 * It actually modifies the native Function object so as to mimic the functionality of new ECMAScript5 feature known as 'function binding'.
 				 * Similar functionality can be carried out with the standard Function.apply/call, but bind() is more flexible and easier syntax.
