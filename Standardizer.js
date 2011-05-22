@@ -670,10 +670,13 @@
 					// Internet Explorer value is srcElement, W3C value is target 
 					var target = event.srcElement || event.target; 
 					
-					// Fix legacy Safari bug which reports events occurring on a text node instead of an element node 
-					if (target.nodeType == 3) { // 3 denotes a text node 
-						target = target.parentNode; // Get parent node of text node 
-					} 
+					// Window resize event causes 'undefined' value for target
+					if (target !== undefined) {
+						// Fix legacy Safari bug which reports events occurring on a text node instead of an element node 
+						if (target.nodeType == 3) { // 3 denotes a text node 
+							target = target.parentNode; // Get parent node of text node 
+						}
+					}
 					
 					// Return the element node the event occurred on 
 					return target;
