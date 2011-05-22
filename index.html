@@ -18,6 +18,7 @@
 		<p class="two test">Paragraph two</p>
 		<p class="three">Paragraph three</p>
 		<p class="four test">Paragraph four</p>
+		<span class="test">this is a span with a class of 'test'</span>
 	</div>
 	<script src="Sizzle.js"></script>
 	<script src="Standardizer.js"></script>
@@ -68,12 +69,18 @@
 			// Event Management
 			var div = document.getElementById('test');
 			var myFunc = function(e) {
-				console.log(e); // standardised event object
+				console.log('myFunc event object: ', e); // standardised event object
 				
 				// Now remove the event listener after one click
 				st.events.remove(div, 'click', myFunc);
 			};
 			st.events.add(div, 'click', myFunc);
+			
+			// Event Delegation Example
+			function myDelegate(e) {
+				console.log('Delegate detected: ', e.target);
+			}
+			st.events.delegate(div, { searchForClassName: 'test', tag: 'p' }, 'click', myDelegate);
 			
 			// Animation Example						
 			st.anim('anim1', 'color:#fff; opacity:1;', { duration: '1000' });

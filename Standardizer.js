@@ -577,10 +577,30 @@
 				},
 				
 				/**
-				 * 
+				 * @param parent { Element/Node } the element to use as the parent
+				 * @param options { Object } user must provide className (matching 'tag name' is optional)
+				 * @param type { String } the event to listen for
+				 * @param handler { Function } the callback function to execute when the element has been found
+				 * @return undefined {  } no explicitly returned value
 				 */
-			 	delegate: function() {
+			 	delegate: function(parent, options, type, handler) {
+			 		var searchFor = options.searchForClassName,
+			 			 tag = options.tag;
 			 		
+			 		this.add(parent, type, function(e) {
+	 					var targ = e.target,
+						 	 tagname = targ.tagName.toLowerCase();
+						
+						if (tag === undefined) {
+			 				if (st.css.hasClass(targ, searchFor)) {
+			 					handler(e);
+			 				}
+			 			} else {
+			 				if (tagname == tag && st.css.hasClass(targ, searchFor)) {
+								handler(e);
+							}	
+			 			}
+	 				});
 			 	},
 								
 				/**
