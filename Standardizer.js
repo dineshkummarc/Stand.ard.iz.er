@@ -578,7 +578,7 @@
 				
 				/**
 				 * @param parent { Element/Node } the element to use as the parent
-				 * @param options { Object } user must provide className (matching 'tag name' is optional)
+				 * @param options { Object } user must provide either a className OR a 'tag name' to match by
 				 * @param type { String } the event to listen for
 				 * @param handler { Function } the callback function to execute when the element has been found
 				 * @return undefined {  } no explicitly returned value
@@ -590,15 +590,29 @@
 			 		this.add(parent, type, function(e) {
 	 					var targ = e.target,
 						 	 tagname = targ.tagName.toLowerCase();
+						 	 
+						if (tag === undefined && searchFor === undefined) {
+							throw new Error('you must provide the delegate method either a className or tagname value');
+						}
 						
+						// Just search by className (as no tagname was provided)
 						if (tag === undefined) {
 			 				if (st.css.hasClass(targ, searchFor)) {
 			 					handler(e);
 			 				}
 			 			} else {
-			 				if (tagname == tag && st.css.hasClass(targ, searchFor)) {
-								handler(e);
-							}	
+			 				// Just search by tagname (as no className was provided)
+			 				if (searchFor === undefined) {
+			 					if (tagname == tag) {
+									handler(e);
+								}
+			 				} 
+			 				// Otherwise search using both className and tagname
+			 				else {
+			 					if (tagname == tag && st.css.hasClass(targ, searchFor)) {
+									handler(e);
+								}
+			 				}	
 			 			}
 	 				});
 			 	},
