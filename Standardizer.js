@@ -544,7 +544,7 @@
 				},
 			
 				/**
-				 * 
+				 * This method handles the event hash map object and executes each event handler for each event type stored
 				 */
 				handler: function(e) {
 				
@@ -577,6 +577,17 @@
 				},
 				
 				/**
+				 * Mimicks Event Delegation.
+				 *
+				 * @note this method is inefficient when checking for more than one type of tag/className.
+				 *
+				 * E.g. 
+				 * 	st.events.delegate(container, { tag: 'form' }, 'mouseout', myFunc1);
+				 * 	st.events.delegate(container, { tag: 'input' }, 'mouseout', myFunc2);
+				 *
+				 * This effectively is adding two event handlers onto the 'container' element, which isn't what event delegation is about!
+				 * And there is no easy way to work around this (currently).
+				 *
 				 * @param parent { Element/Node } the element to use as the parent
 				 * @param options { Object } user must provide either a className OR a 'tag name' to match by
 				 * @param type { String } the event to listen for
@@ -584,6 +595,7 @@
 				 * @return undefined {  } no explicitly returned value
 				 */
 			 	delegate: function(parent, options, type, handler) {
+			 	
 			 		var searchFor = options.searchForClassName,
 			 			 tag = options.tag;
 			 		
@@ -615,6 +627,7 @@
 			 				}	
 			 			}
 	 				});
+	 				
 			 	},
 								
 				/**
