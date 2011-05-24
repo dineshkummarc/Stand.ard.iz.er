@@ -940,6 +940,24 @@
 				},
 				
 				/**
+				 * The following method returns the height of the document/page.
+				 * If the actual document’s body height is less than the viewport height then it will return the viewport height instead.
+				 *
+				 * @return { Integer } the height of the document/page ()
+				 */
+				getDocHeight: (function() {
+					var doc = document,
+						 body = doc.body,
+						 elem = doc.documentElement;
+						 
+					return Math.max(
+						Math.max(body.scrollHeight, elem.scrollHeight),
+						Math.max(body.offsetHeight, elem.offsetHeight),
+						Math.max(body.clientHeight, elem.clientHeight)
+					);
+				}()),
+				
+				/**
 				 * The following method isn't callable via the 'utilities' namespace.
 				 * It actually modifies the native Function object so as to mimic the functionality of new ECMAScript5 feature known as 'function binding'.
 				 * Similar functionality can be carried out with the standard Function.apply/call, but bind() is more flexible and easier syntax.
