@@ -22,7 +22,7 @@ Features
 * Event Management (with normalised event object)
 * Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, bind, Dictionary)
 * CSS methods (getAppliedStyle, addClass, removeClass, hasClass, hasTransitions, whichTransition)
-* Animations library (inc. CSS3 Transitions support, with fallback to 'plain vanilla' JavaScript)
+* Animations library (based on [@ded](http://twitter.com/ded)'s [Morpheus](https://github.com/ded/morpheus/))
 * Event Emitter
 * CSS Selector Engine (aka Sizzle... jQuery's selector engine)
 
