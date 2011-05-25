@@ -12,6 +12,7 @@
 	<!-- ELEMENTS FOR TESTING ANIMATION -->
 	<div id="anim1">test1</div>
    <div id="anim2">test2</div>
+   <div id="anim3">test2</div>
    
 	<div id="test">
 		<p class="one intro">Paragraph one</p>
@@ -28,9 +29,9 @@
    		console.log('Time is: ' + new Date());
    	}
    	
-		st.load(time);
+		st.ondomready(time);
 		
-		st.ajax({
+		st.load({
 			url: 'JSON.php',
 			dataType: 'json',
 			onSuccess: function(resp) {
@@ -39,7 +40,7 @@
 			}
 		});
 		
-		st.ajax({
+		st.load({
 			url: 'Standardizer.js',
 
 			onError: function(message) {
@@ -83,25 +84,46 @@
 			st.events.delegate(div, { searchForClassName: 'test', tag: 'p' }, 'click', myDelegate);
 			
 			// Animation Example						
-			st.anim('anim1', 'color:#fff; opacity:1;', { duration: '1000' });
-			st.anim('anim2', 'left:500px;', { 
-				duration: '2000', 
-				easing: 'ease-Out', 
-				// had used 'bounce' easing but that's not supported with CSS transitions (Js animations also has different easing names?!)
-				// linear | ease-in | ease-out (are only consistent easings across css transitions and js animations)
-				after: function() {
+			var anim1 = document.getElementById('anim1'),
+				 anim2 = document.getElementById('anim2'),
+				 anim3 = document.getElementById('anim3');
+				 
+			st.anim(anim1, {
+				duration: 1000,
+				opacity: 1
+			});
+			
+			st.anim(anim2, {
+				complete: function() {
 					console.log('animation finished');
 					
-					var el = document.getElementById('anim1');
-					st.anim(el, 'left:500px;'); // you can specify a string or an element node
-				}
+					st.anim(anim1, {
+						complete: function() {
+							console.log('now this animation has finished');
+						},
+						left: '500px'
+					});
+				},
+				duration: 2000,
+				easing: 'easeOut',
+				left: '500px'
+			});
+			
+			st.anim(anim3, {
+				duration: 2000,
+				opacity: 1,
+				'background-color': '#88ff99',
+				height: '+=20',
+				width: '-=80',
+				top: 100,
+				left: '400px',
+				easing: 'bouncePast'
 			});
 			
 			// Create Element Utility Example
 			console.log(st.utils.createElement('p'));
 			console.log(st.utils.createElement('p'));
 			console.log(st.utils.createElement('div'));
-						
 		};
 		
 // Publish/Subscribe Example

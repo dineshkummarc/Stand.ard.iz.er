@@ -55,57 +55,39 @@
 				 elemHeight = parseInt(dd.getAttribute('data-height')),
 				 useTransitions = true;
 			
-			// FUGLY user-agent sniff for Firefox 4
-			var nua = navigator.userAgent;
-			if (nua.toLowerCase().indexOf('firefox') !== -1) {
-				var check = nua.split('/'),
-					 ff = parseInt(check[check.length-1]) >= 4;
-				
-				// Tell browser to use jsAnimation for Firefox 4 when ustilising 'drop downs'
-				// This is because Firefox has issues with applying individual 'margin' properties.
-				// It can be 'partially' worked around when using just 'margin' (still not good though), 
-				// but regardless, the jsAnimation API requires individual properties not multi-purpose 
-				// e.g. it doesn't like 'margin', it instead needs 'margin-top, margin-bottom'...etc
-				if (ff) {
-					useTransitions = false;
-				}
-			}
-			
 			// If element is hidden...
-			if (ddStyle.display === 'none') {
-			
-				// Elements must have a display setting via style attribute 
-				// as the js fallback animation library can't pick up the style settings otherwise
-				ddStyle.display = 'block';
+			if (st.css.getAppliedStyle(dd, 'display') === 'none') {
 				
-				// CSS Transition engines seem to get stuck trying to animate and end up just showing the final results of the animation
-				// Using a timeout, unlocks the engine for a brief moment so it can re-render the animation as it should do
-				window.setTimeout(function() {
-					
-					// BUG: Firefox4 (which uses CSS3 Transitions) has an issue re-setting individual margin properties (e.g. margin-bottom).
-					// So I've had to look at re-writing the animation library so that a developer can specify a setting and choose the plain js fallback animation code instead of CSS transitions
-					st.anim(dd, 'height:' + elemHeight + 'px; margin-bottom:20px; opacity:1; padding-bottom:10px; padding-top:10px;', { 
-						cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
-						duration:'500', 
-						easing: 'ease-In'
-					});
-					
-				}, 50);
+				st.css.addClass(dd, 'showDD');
 				
-			} 
+				st.anim(dd, {
+					complete: function() {
+						st.css.removeClass(dd, 'hideDD');
+					},
+					duration: 500,
+					height: elemHeight,
+					'margin-bottom': 20,
+					opacity: 1,
+					'padding-bottom': 10,
+					'padding-top': 10
+				});
+				
+			}
 			
 			// If element is visible...
 			else {
-				
-				st.anim(dd, 'height:0px; margin-bottom:0px; opacity:0; padding-bottom:0px; padding-top:0px;', { 
-					cssTransition: useTransitions, // all browsers will use CSS Transitions (if supported), but Firefox 4 will use Js animation
-					duration:'500', 
-					easing: 'ease-In',
-					after: function() {
-						// Although height and opacity have made the element 'practically' hidden, 
-						// the element still requires display:none to be set.
-						ddStyle.display = 'none';
-					}
+			
+				st.anim(dd, {
+					complete: function() {
+						st.css.removeClass(dd, 'showDD');
+						st.css.addClass(dd, 'hideDD');
+					},
+					duration: 500,
+					height: 0,
+					'margin-bottom': 0,
+					opacity: 0,
+					'padding-bottom': 0,
+					'padding-top': 0
 				});
 				
 			}
@@ -128,13 +110,7 @@
    			dd[i].setAttribute('data-height', dd[i].clientHeight-20);
    			
    			// Hide all drop down <div> elements
-   			ddStyle.display = 'none';
-   			ddStyle.height = '0px';
-				ddStyle.opacity = '0';
-				ddStyle.filter = 'alpha(opacity=0)';
-				
-				// We remove the bottom margin (originally set via CSS) as it causes an extra gap to show when animating.
-				ddStyle.marginBottom = '-20px';
+   			st.css.addClass(dd[i], 'hideDD');
    			
    			// Push each <div>'s parent element into an Array
    			(dd[i].previousSibling.nodeType !== 1) 

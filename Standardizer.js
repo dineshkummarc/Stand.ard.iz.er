@@ -1137,810 +1137,316 @@
 			},
 			
 			/**
-			 * The following method allows the user to animate any elements using CSS properties.
-			 * It has been modified to check for native (or vendor prefixed) CSS3 transitions.
-			 * 
-			 * Original code by @thomasfuch (emile.js)
-			 * IE<9 Opacity support by @kangax
-			 * 
-			 * @param el { Element/Node } the element that we want to animate
-			 * @param style { String } a string of properties to animation (written in standard CSS syntax)
-			 * @param opts { Object } user configuration settings
-			 * @param after { Function } function to execute after the specified animation has completed
-			 * @return { Function } immediately invoked function expression which returns a new Function
+			 * The function defined here has been modified from the source by @ded (https://github.com/ded/morpheus/)
+			 * TODO: Consider re-implementing a CSSTransitions fallback (as per my previous version which originally used emile.js by @thomasfuchs
 			 */
-			animation: (function() {
-				var thisBody = document.body || document.documentElement, 
-					 thisStyle = thisBody.style, 
-					 vendors,
-					 hasCSSTransitions,
-					 whichTransition,
-					 cssTransitionsAnimation,
-					 jsAnimation,
-					 chosenAnimation;
-				
-				hasCSSTransitions = thisStyle.WebkitTransition !== undefined || 
-							 			  thisStyle.MozTransition !== undefined || 
-							 			  thisStyle.OTransition !== undefined || 
-							 			  thisStyle.msTransition !== undefined || 
-							 			  thisStyle.transition !== undefined;
-				
-				// CSS Transitions Animation Function...
-				
-				cssTransitionsAnimation = function(el, style, opts) {
-					var opts = opts || {};
-					
-					// Assume the user wants CSS Transitions by default
-					if (opts.cssTransition === undefined) {
-						opts.cssTransition = true;
-					}
-					
-					// If the user has specified for no CSS transitions to be used then rewrite function to use jsAnimation
-					if (!opts.cssTransition) {
-						chosenAnimation = jsAnimation;
-						chosenAnimation(el, style, opts);
-						return;
-					}					
-					
-					// Otherwise continue with CSS Transition specific code...
-					
-					if (this.css.hasTransitions === undefined) {
-			   		// These properties are only available after the function has been run once
-				   	this.css.hasTransitions = true;
-				   	this.css.whichTransition = whichTransition;
-			   	}
-			   	
-			   	var el = (typeof el == 'string') ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
-			   		 cleanWhitespace = style.replace(/\s/ig, ''),
-			   		 settings = cleanWhitespace.split(';'),
-			   		 len = settings.length,
-			   		 arr = [],
-			   		 duration = (opts.duration) ? ((opts.duration / 1000) + 's') : '0.5s',
-			   		 easing = opts.easing || 'linear',
-			   		 compileString = '',
-			   		 i,
-			   		 polling,
-			   		 animationComplete = false;
-			   	
-			   	// Create an Array of settings...
-			   	// ["left", "-176px"] ["opacity", "0.5"]
-			   	for (i = 0; i < len-1; i++) {
-			   		arr.push(settings[i].split(':'));
-			   	}
-			   	
-			   	// Compile transition string
-			   	for (i = 0, len = arr.length; i < len; i++) {
-			   		compileString += arr[i][0] + ' ' + duration + ' ' + easing;
-			   		
-			   		// Only add trailing space as long as it's not the last property being set
-			   		if (i+1 !== len) {
-			   			compileString += ', ';
-			   		}
-			   	}
-			   	
-			   	// Set the relevant transition (e.g. WebkitTransition) to have a specific value
-			   	el.style[whichTransition] = compileString;
-			   	
-			   	// Add custom data-* attribute to tell when element is animating
-					el.setAttribute('data-anim', 'true');
-			   	
-			   	// Loop through each property the user has specified to be animated and set the 'style' property manually
-			   	for (i = 0; i <= len; i++) {
-			   		for (item in arr) {
-			   			el.style[arr[item][0]] = arr[item][1];
-			   		}
-			   	}
-			   	
-			   	el.addEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
-			   	el.addEventListener('transitionend', checkTransitionEnd, false); // Mozilla
-			   	el.addEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
-			   	
-			   	// Some browsers support CSS3 transitions but NOT any event listeners for the transition's end!
-			   	// So we'll have to use polling to work around this (not ideal I know)
-			   	polling = window.setTimeout(function() {
-			   		animationComplete = true;
-			   		clearTimeout(polling);
-			   		el.removeAttribute('data-anim');
-			   		opts.after && opts.after(); // execute callback if one has been provided
-			   	}, (opts.duration + 200)); // I've added an extra 200 milliseconds onto the timeout in case the animation was slow
-			   	
-			   	// Check for transition end and then run callback (if one provided)
-			   	function checkTransitionEnd(e) {
-			   		if (!animationComplete) {
-			   			clearTimeout(polling);
-			   			animationComplete = true;
-			   			el.removeAttribute('data-anim');
-			   			opts.after && opts.after(); // execute callback if one has been provided
-			   		}
-			   		
-						el.removeEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
-			   		el.removeEventListener('transitionend', checkTransitionEnd, false); // Mozilla
-			   		el.removeEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
-			   	}
-				};
-				
-				// Js Animation Function...
-				
-				jsAnimation = function(el, style, opts, after) {
-					var parseEl = document.createElement('div'),
-						 isIE = !!window.attachEvent && !window.opera,
-						 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
-					 				 'borderRightColor borderRightWidth borderSpacing borderTopColor borderTopWidth bottom color fontSize '+
-					 				 'fontWeight height left letterSpacing lineHeight marginBottom marginLeft marginRight marginTop maxHeight '+
-					 				 'maxWidth minHeight minWidth opacity outlineColor outlineOffset outlineWidth paddingBottom paddingLeft '+
-					 				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' '),
-					
-					// Internet Explorer < 9 support for Opacity (via @kangax)...
-					
-					 				 supportsOpacity = typeof parseEl.style.opacity == 'string',
-					 				 supportsFilters = typeof parseEl.style.filter == 'string',
-					 				 reOpacity = /alpha\(opacity=([^\)]+)\)/,
-					 				 setOpacity = function(){ },
-					 				 getOpacityFromComputed = function(){ return '1'; };
-					 				 
-					if (supportsOpacity) {
-						setOpacity = function(el, value) {
-							el.style.opacity = value;
-						};
-						
-						getOpacityFromComputed = function(computed) { 
-							return computed.opacity; 
-						};
-					}
-					else if (supportsFilters) {
-						setOpacity = function(el, value) {
-							var es = el.style;
-							
-							// If the element doesn't have 'hasLayout' triggered then make sure it is forced via the 'zoom' style hack
-							if(!el.currentStyle.hasLayout) { 
-								es.zoom = 1;						
-							}
-							
-							if (reOpacity.test(es.filter)) {
-								value = value >= 0.9999 ? '' : ('alpha(opacity=' + (value * 100) + ')');
-								es.filter = es.filter.replace(reOpacity, value);
-							} else {
-								es.filter += ' alpha(opacity=' + (value * 100) + ')';
-							}
-						};
-						
-						getOpacityFromComputed = function(comp) {
-							var m = comp.filter.match(reOpacity);
-							return (m ? (m[1] / 100) : 1) + '';
-						};
-					}
-					
-					var easings = {
-						easeOut: function(pos) {
-							return Math.sin(pos * Math.PI / 2);
-						},
-						
-						easeOutStrong: function(pos) {
-							return (pos == 1) ? 1 : 1 - Math.pow(2, -10 * pos);
-						},
-						
-						easeIn: function(pos) {
-							return pos * pos;
-						},
-						
-						easeInStrong: function(pos) {
-							return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
-						},
-						
-						bounce: function(pos) {
-							if (pos < (1 / 2.75)) {
-								return 7.5625 * pos * pos;
-							}
-							if (pos < (2 / 2.75)) {
-								return 7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75;
-							}
-							if (pos < (2.5 / 2.75)) {
-								return 7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375;
-							}
-							return 7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375;
-						},
-						
-						linear: function(pos) {
-							return (-Math.cos(pos * Math.PI) / 2) + 0.5;
-						},
-						
-						sine: function(pos) {
-							return (Math.sin(pos * Math.PI / 2));
-						},
-						
-						flicker: function(pos) {
-							return ((-Math.cos(pos * Math.PI) / 4) + 0.75) + Math.random() * 0.25;
-						},
-						
-						wobble: function(pos) {
-							return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
-						},
-						
-						pulsate: function(pos) {
-							return (0.5 + Math.sin(17 * pos) / 2);
-						},
-						
-						expo: function(pos) {
-							return Math.pow(2, 8 * (pos - 1));
-						},
-						
-						quad: function(pos) {
-							return Math.pow(pos, 2);
-						},
-						
-						cube: function(pos) {
-							return Math.pow(pos, 3);
-						}
-					};
-					
-					function interpolate(source, target, pos) { 
-						return (source+(target-source)*pos).toFixed(3); 
-					}
-					
-					function s(str, p, c) { 
-						return str.substr(p,c||1);
-					}
-					
-					function color(source,target,pos) {
-						var i = 2, 
-							 j, 
-							 c, 
-							 tmp, 
-							 v = [], 
-							 r = [];
-						
-						while (j=3,c=arguments[i-1],i--) {					
-							if (s(c,0)=='r') { 
-								c = c.match(/\d+/g); while(j--) v.push(~~c[j]);
-							}
-							else {
-								if(c.length==4) {
-									c='#'+s(c,1)+s(c,1)+s(c,2)+s(c,2)+s(c,3)+s(c,3);
-								}
-								while (j--) {
-									v.push(parseInt(s(c,1+j*2,2), 16)); 
-								}
-							}
-						}
-						
-						while (j--) { 
-							tmp = ~~(v[j+3]+(v[j]-v[j+3])*pos); r.push(tmp<0?0:tmp>255?255:tmp); 
-						}
-						
-						return 'rgb('+r.join(',')+')';
-					}
-					
-					function parse(val) {
-						var v = parseFloat(val), 
-							 q = val.replace(/^[\-\d\.]+/,'');
-						
-						// If a colour value...
-						if (isNaN(v)) {
-							return { v: q, f: color, u: ''};
-						} else {
-							return { v: v, f: interpolate, u: q };
-						}
-					}
-					
-					function normalize(style) {
-						var css, 
-							 rules = {}, 
-							 i = props.length, 
-							 v;
-							 
-						parseEl.innerHTML = '<div style="'+style+'"></div>';
-						
-						css = parseEl.childNodes[0].style;
-						
-						while(i--) {
-							
-							if(v = css[props[i]]) {
-								rules[props[i]] = parse(v, props[i]);
-							}
-						}
-						
-						return rules;
-					}
-					
-					// Either get the element by specified ID or just use the element node passed through
-					var el = (typeof el == 'string') ? document.getElementById(el) : el,
-						 opts = opts || {};
-					
-					// Add custom data-* attribute to tell when element is animating
-					el.setAttribute('data-anim', 'true');
-					
-					var target = normalize(style), 
-						 comp = el.currentStyle ? el.currentStyle : getComputedStyle(el, null),
-						 prop, 
-						 current = {}, 
-						 start = +new Date, 
-						 dur = parseInt(opts.duration) || 200, 
-						 finish = start+dur, 
-						 interval,
-						 curValue,
-						 easing = opts.easing || easings.linear; // 'linear' is actually 'cosine' but changed name for compatibility with CSS3 transitions (linear is the default easing effect)
-						 
-					// Modification made to include different easing styles
-					switch (easing) {
-						case 'ease-Out':
-							easing = easings.easeOut;
-							break;
-						case 'easeOutStrong':
-							easing = easings.easeOutStrong;
-							break;
-						case 'ease-In':
-							easing = easings.easeIn;
-							break;
-						case 'easeInStrong':
-							easing = easings.easeInStrong;
-							break;
-						case 'bounce':
-							easing = easings.bounce;
-							break;
-						case 'linear':
-							easing = easings.linear;
-							break;
-						case 'sine':
-							easing = easings.sine;
-							break;
-						case 'flicker':
-							easing = easings.flicker;
-							break;
-						case 'wobble':
-							easing = easings.wobble;
-							break;
-						case 'pulsate':
-							easing = easings.pulsate;
-							break;
-						case 'expo':
-							easing = easings.expo;
-							break;
-						case 'quad':
-							easing = easings.quad;
-							break;
-						case 'cube':
-							easing = easings.cube;
-							break;
-					}
-					
-					for (val in target) {
-						current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
-					}
-					
-					// Code to position element
-					function render() {
-						var time = +new Date, 
-							 pos = time>finish ? 1 : (time-start)/dur,
-							 animating = true;
-					  
-						for(prop in target) {
-							curValue = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
-							if (prop === 'opacity') {
-								setOpacity(el, curValue);
-							} else {
-								el.style[prop] = curValue;
-							}
-						}
-						
-						if(time > finish) { 
-							el.removeAttribute('data-anim');
-							clearInterval(interval); 
-							opts.after && opts.after(); 
-							after && setTimeout(after, 1);
-						}
-					}
-					
-					interval = setInterval(render, 10);
-				};
-				
-				// CSS Transitions Specific Set-up Code
-				
-				if (hasCSSTransitions) {
-					vendors = {
-				    	'WebkitTransition': thisStyle.WebkitTransition !== undefined,
-				    	'MozTransition': thisStyle.MozTransition !== undefined,
-				    	'OTransition': thisStyle.OTransition !== undefined,
-				    	'msTransition': thisStyle.msTransition !== undefined,
-				    	'transition': thisStyle.transition !== undefined
-					}
-					
-					for (prop in vendors) {
-				   	if (vendors.hasOwnProperty(prop)) {
-				   		if (vendors[prop]) {
-				   			whichTransition = prop;
-				   		}
-				   	}
-				   }
-					
-					chosenAnimation = cssTransitionsAnimation;
-				} 
-				
-				// JsAnimation Specific Set-up Code
-				
-				else {
-					chosenAnimation = jsAnimation;
-				}
-				
-				return chosenAnimation;
-				
-				/*
-				if (hasCSSTransitions) {
-					
-					vendors = {
-				    	'WebkitTransition': thisStyle.WebkitTransition !== undefined,
-				    	'MozTransition': thisStyle.MozTransition !== undefined,
-				    	'OTransition': thisStyle.OTransition !== undefined,
-				    	'msTransition': thisStyle.msTransition !== undefined,
-				    	'transition': thisStyle.transition !== undefined
-					}
-					
-					for (prop in vendors) {
-				   	if (vendors.hasOwnProperty(prop)) {
-				   		if (vendors[prop]) {
-				   			whichTransition = prop;
-				   		}
-				   	}
-				   }
-				   
-				   return function(el, style, opts) {
-				   	
-				   	if (this.css.hasTransitions === undefined) {
-				   		// These properties are only available after the function has been run once
-					   	this.css.hasTransitions = true;
-					   	this.css.whichTransition = whichTransition;
-				   	}
-				   	
-				   	var el = (typeof el == 'string') ? document.getElementById(el) : el, // Either get the element by specified ID or just use the element node passed through
-				   		 opts = opts || {},
-				   		 cleanWhitespace = style.replace(/\s/ig, ''),
-				   		 settings = cleanWhitespace.split(';'),
-				   		 len = settings.length,
-				   		 arr = [],
-				   		 duration = (opts.duration) ? ((opts.duration / 1000) + 's') : '0.5s',
-				   		 easing = opts.easing || 'linear',
-				   		 compileString = '',
-				   		 i,
-				   		 polling,
-				   		 animationComplete = false;
-				   	
-				   	// Create an Array of settings...
-				   	// ["left", "-176px"] ["opacity", "0.5"]
-				   	for (i = 0; i < len-1; i++) {
-				   		arr.push(settings[i].split(':'));
-				   	}
-				   	
-				   	// Compile transition string
-				   	for (i = 0, len = arr.length; i < len; i++) {
-				   		compileString += arr[i][0] + ' ' + duration + ' ' + easing;
-				   		
-				   		// Only add trailing space as long as it's not the last property being set
-				   		if (i+1 !== len) {
-				   			compileString += ', ';
-				   		}
-				   	}
-				   	
-				   	// Set the relevant transition (e.g. WebkitTransition) to have a specific value
-				   	el.style[whichTransition] = compileString;
-				   	
-				   	// Add custom data-* attribute to tell when element is animating
-						el.setAttribute('data-anim', 'true');
-				   	
-				   	// Loop through each property the user has specified to be animated and set the 'style' property manually
-				   	for (i = 0; i <= len; i++) {
-				   		for (item in arr) {
-				   			el.style[arr[item][0]] = arr[item][1];
-				   		}
-				   	}
-				   	
-				   	el.addEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
-				   	el.addEventListener('transitionend', checkTransitionEnd, false); // Mozilla
-				   	el.addEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
-				   	
-				   	// Some browsers support CSS3 transitions but NOT any event listeners for the transition's end!
-				   	// So we'll have to use polling to work around this (not ideal I know)
-				   	polling = window.setTimeout(function() {
-				   		animationComplete = true;
-				   		clearTimeout(polling);
-				   		el.removeAttribute('data-anim');
-				   		opts.after && opts.after(); // execute callback if one has been provided
-				   	}, (opts.duration + 200)); // I've added an extra 200 milliseconds onto the timeout in case the animation was slow
-				   	
-				   	// Check for transition end and then run callback (if one provided)
-				   	function checkTransitionEnd(e) {
-				   		if (!animationComplete) {
-				   			clearTimeout(polling);
-				   			animationComplete = true;
-				   			el.removeAttribute('data-anim');
-				   			opts.after && opts.after(); // execute callback if one has been provided
-				   		}
-				   		
-							el.removeEventListener('webkitTransitionEnd', checkTransitionEnd, false); // Webkit
-				   		el.removeEventListener('transitionend', checkTransitionEnd, false); // Mozilla
-				   		el.removeEventListener('OTransitionEnd', checkTransitionEnd, false); // Opera
-				   	}
-				   	
-				   };
-					
-				} 
-				
-				// Native (or vendor prefixed) CSS3 transitions aren't supported so we'll refer to a modified version of the emilejs library
-				else {
-				
-					var parseEl = document.createElement('div'),
-						 isIE = !!window.attachEvent && !window.opera,
-						 props = ('backgroundColor borderBottomColor borderBottomWidth borderLeftColor borderLeftWidth '+
-					 				 'borderRightColor borderRightWidth borderSpacing borderTopColor borderTopWidth bottom color fontSize '+
-					 				 'fontWeight height left letterSpacing lineHeight marginBottom marginLeft marginRight marginTop maxHeight '+
-					 				 'maxWidth minHeight minWidth opacity outlineColor outlineOffset outlineWidth paddingBottom paddingLeft '+
-					 				 'paddingRight paddingTop right textIndent top width wordSpacing zIndex').split(' '),
-					
-					// Internet Explorer < 9 support for Opacity (via @kangax)...
-					
-					 				 supportsOpacity = typeof parseEl.style.opacity == 'string',
-					 				 supportsFilters = typeof parseEl.style.filter == 'string',
-					 				 reOpacity = /alpha\(opacity=([^\)]+)\)/,
-					 				 setOpacity = function(){ },
-					 				 getOpacityFromComputed = function(){ return '1'; };
-					 				 
-					if (supportsOpacity) {
-						setOpacity = function(el, value) {
-							el.style.opacity = value;
-						};
-						
-						getOpacityFromComputed = function(computed) { 
-							return computed.opacity; 
-						};
-					}
-					else if (supportsFilters) {
-						setOpacity = function(el, value) {
-							var es = el.style;
-							
-							// If the element doesn't have 'hasLayout' triggered then make sure it is forced via the 'zoom' style hack
-							if(!el.currentStyle.hasLayout) { 
-								es.zoom = 1;						
-							}
-							
-							if (reOpacity.test(es.filter)) {
-								value = value >= 0.9999 ? '' : ('alpha(opacity=' + (value * 100) + ')');
-								es.filter = es.filter.replace(reOpacity, value);
-							} else {
-								es.filter += ' alpha(opacity=' + (value * 100) + ')';
-							}
-						};
-						
-						getOpacityFromComputed = function(comp) {
-							var m = comp.filter.match(reOpacity);
-							return (m ? (m[1] / 100) : 1) + '';
-						};
-					}
-					
-					var easings = {
-						easeOut: function(pos) {
-							return Math.sin(pos * Math.PI / 2);
-						},
-						
-						easeOutStrong: function(pos) {
-							return (pos == 1) ? 1 : 1 - Math.pow(2, -10 * pos);
-						},
-						
-						easeIn: function(pos) {
-							return pos * pos;
-						},
-						
-						easeInStrong: function(pos) {
-							return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
-						},
-						
-						bounce: function(pos) {
-							if (pos < (1 / 2.75)) {
-								return 7.5625 * pos * pos;
-							}
-							if (pos < (2 / 2.75)) {
-								return 7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75;
-							}
-							if (pos < (2.5 / 2.75)) {
-								return 7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375;
-							}
-							return 7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375;
-						},
-						
-						linear: function(pos) {
-							return (-Math.cos(pos * Math.PI) / 2) + 0.5;
-						},
-						
-						sine: function(pos) {
-							return (Math.sin(pos * Math.PI / 2));
-						},
-						
-						flicker: function(pos) {
-							return ((-Math.cos(pos * Math.PI) / 4) + 0.75) + Math.random() * 0.25;
-						},
-						
-						wobble: function(pos) {
-							return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
-						},
-						
-						pulsate: function(pos) {
-							return (0.5 + Math.sin(17 * pos) / 2);
-						},
-						
-						expo: function(pos) {
-							return Math.pow(2, 8 * (pos - 1));
-						},
-						
-						quad: function(pos) {
-							return Math.pow(pos, 2);
-						},
-						
-						cube: function(pos) {
-							return Math.pow(pos, 3);
-						}
-					};
-					
-					function interpolate(source, target, pos) { 
-						return (source+(target-source)*pos).toFixed(3); 
-					}
-					
-					function s(str, p, c) { 
-						return str.substr(p,c||1);
-					}
-					
-					function color(source,target,pos) {
-						var i = 2, 
-							 j, 
-							 c, 
-							 tmp, 
-							 v = [], 
-							 r = [];
-						
-						while (j=3,c=arguments[i-1],i--) {					
-							if (s(c,0)=='r') { 
-								c = c.match(/\d+/g); while(j--) v.push(~~c[j]);
-							}
-							else {
-								if(c.length==4) {
-									c='#'+s(c,1)+s(c,1)+s(c,2)+s(c,2)+s(c,3)+s(c,3);
-								}
-								while (j--) {
-									v.push(parseInt(s(c,1+j*2,2), 16)); 
-								}
-							}
-						}
-						
-						while (j--) { 
-							tmp = ~~(v[j+3]+(v[j]-v[j+3])*pos); r.push(tmp<0?0:tmp>255?255:tmp); 
-						}
-						
-						return 'rgb('+r.join(',')+')';
-					}
-					
-					function parse(val) {
-						var v = parseFloat(val), 
-							 q = val.replace(/^[\-\d\.]+/,'');
-						
-						// If a colour value...
-						if (isNaN(v)) {
-							return { v: q, f: color, u: ''};
-						} else {
-							return { v: v, f: interpolate, u: q };
-						}
-					}
-					
-					function normalize(style) {
-						var css, 
-							 rules = {}, 
-							 i = props.length, 
-							 v;
-							 
-						parseEl.innerHTML = '<div style="'+style+'"></div>';
-						
-						css = parseEl.childNodes[0].style;
-						
-						while(i--) {
-							
-							if(v = css[props[i]]) {
-								rules[props[i]] = parse(v, props[i]);
-							}
-						}
-						
-						return rules;
-					}
-					
-					return function(el, style, opts, after) {
-						// Either get the element by specified ID or just use the element node passed through
-						el = (typeof el == 'string') ? document.getElementById(el) : el;
-						opts = opts || {};
-						
-						// Add custom data-* attribute to tell when element is animating
-						el.setAttribute('data-anim', 'true');
-						
-						var target = normalize(style), 
-							 comp = el.currentStyle ? el.currentStyle : getComputedStyle(el, null),
-							 prop, 
-							 current = {}, 
-							 start = +new Date, 
-							 dur = parseInt(opts.duration) || 200, 
-							 finish = start+dur, 
-							 interval,
-							 curValue,
-							 easing = opts.easing || easings.linear; // 'linear' is actually 'cosine' but changed name for compatibility with CSS3 transitions (linear is the default easing effect)
-							 
-						// Modification made to include different easing styles
-						switch (easing) {
-							case 'ease-Out':
-								easing = easings.easeOut;
-								break;
-							case 'easeOutStrong':
-								easing = easings.easeOutStrong;
-								break;
-							case 'ease-In':
-								easing = easings.easeIn;
-								break;
-							case 'easeInStrong':
-								easing = easings.easeInStrong;
-								break;
-							case 'bounce':
-								easing = easings.bounce;
-								break;
-							case 'linear':
-								easing = easings.linear;
-								break;
-							case 'sine':
-								easing = easings.sine;
-								break;
-							case 'flicker':
-								easing = easings.flicker;
-								break;
-							case 'wobble':
-								easing = easings.wobble;
-								break;
-							case 'pulsate':
-								easing = easings.pulsate;
-								break;
-							case 'expo':
-								easing = easings.expo;
-								break;
-							case 'quad':
-								easing = easings.quad;
-								break;
-							case 'cube':
-								easing = easings.cube;
-								break;
-						}
-						
-						for (val in target) {
-							current[val] = parse(val === 'opacity' ? getOpacityFromComputed(comp) : comp[val]);
-						}
-						
-						// Code to position element
-						function render() {
-							var time = +new Date, 
-								 pos = time>finish ? 1 : (time-start)/dur,
-								 animating = true;
-						  
-							for(prop in target) {
-								curValue = target[prop].f(current[prop].v, target[prop].v, easing(pos)) + target[prop].u;
-								if (prop === 'opacity') {
-									setOpacity(el, curValue);
-								} else {
-									el.style[prop] = curValue;
-								}
-							}
-						
-							if(time > finish) { 
-								el.removeAttribute('data-anim');
-								clearInterval(interval); 
-								opts.after && opts.after(); 
-								after && setTimeout(after, 1);
-							}
-						}
-						
-						interval = setInterval(render, 10);
-					};
+			animation: (function(context, doc, win) {
+			
+				/* The equations defined here are open source under BSD License.
+				 * http://www.robertpenner.com/easing_terms_of_use.html (c) 2003 Robert Penner
+				 * Adapted to single time-based by
+				 * Brian Crescimanno <brian.crescimanno@gmail.com>
+				 * Ken Snyder <kendsnyder@gmail.com>
+				 */
+				var easings = {
+  					easeOut: function (t) {
+						return Math.sin(t * Math.PI / 2);
+					},
 
-				}*/
+					easeOutStrong: function (t) {
+						return (t == 1) ? 1 : 1 - Math.pow(2, -10 * t);
+					},
+					
+					easeIn: function (t) {
+						return t * t;
+					},
+					
+					easeInStrong: function (t) {
+						return (t == 0) ? 0 : Math.pow(2, 10 * (t - 1));
+					},
+					
+					easeOutBounce: function(pos) {
+						if ((pos) < (1/2.75)) {
+							return (7.5625*pos*pos);
+						} else if (pos < (2/2.75)) {
+							return (7.5625*(pos-=(1.5/2.75))*pos + .75);
+						} else if (pos < (2.5/2.75)) {
+							return (7.5625*(pos-=(2.25/2.75))*pos + .9375);
+						} else {
+							return (7.5625*(pos-=(2.625/2.75))*pos + .984375);
+						}
+					},
+					
+					easeInBack: function(pos){
+						var s = 1.70158;
+						return (pos)*pos*((s+1)*pos - s);
+					},
+					
+					easeOutBack: function(pos){
+						var s = 1.70158;
+						return (pos=pos-1)*pos*((s+1)*pos + s) + 1;
+					},
+					
+					bounce: function(t) {
+						if (t < (1 / 2.75)) {
+							return 7.5625 * t * t;
+						}
+						if (t < (2 / 2.75)) {
+							return 7.5625 * (t -= (1.5 / 2.75)) * t + 0.75;
+						}
+						if (t < (2.5 / 2.75)) {
+							return 7.5625 * (t -= (2.25 / 2.75)) * t + 0.9375;
+						}
+						return 7.5625 * (t -= (2.625 / 2.75)) * t + 0.984375;
+					},
+					
+					bouncePast: function(pos) {
+						if (pos < (1 / 2.75)) {
+							return (7.5625 * pos * pos);
+						} else if (pos < (2 / 2.75)) {
+							return 2 - (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
+						} else if (pos < (2.5 / 2.75)) {
+							return 2 - (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
+						} else {
+							return 2 - (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
+						}
+					},
+					
+					swingTo: function(pos) {
+						var s = 1.70158;
+						return (pos -= 1) * pos * ((s + 1) * pos + s) + 1;
+					},
+					
+					swingFrom: function(pos) {
+						var s = 1.70158;
+						return pos * pos * ((s + 1) * pos - s);
+					},
+					
+					elastic: function(pos) {
+						return -1 * Math.pow(4, -8 * pos) * Math.sin((pos * 6 - 1) * (2 * Math.PI) / 2) + 1;
+					},
+					
+					spring: function(pos) {
+						return 1 - (Math.cos(pos * 4.5 * Math.PI) * Math.exp(-pos * 6));
+					},
+					
+					blink: function(pos, blinks) {
+						return Math.round(pos*(blinks||5)) % 2;
+					},
+					
+					pulse: function(pos, pulses) {
+						return (-Math.cos((pos*((pulses||5)-.5)*2)*Math.PI)/2) + .5;
+					},
+					
+					wobble: function(pos) {
+						return (-Math.cos(pos*Math.PI*(9*pos))/2) + 0.5;
+					},
+					
+					sinusoidal: function(pos) {
+						return (-Math.cos(pos*Math.PI)/2) + 0.5;
+					},
+					
+					flicker: function(pos) {
+						var pos = pos + (Math.random()-0.5)/5;
+						return easings.sinusoidal(pos < 0 ? 0 : pos > 1 ? 1 : pos);
+					},
+					
+					mirror: function(pos) {
+						if (pos < 0.5) {
+							return easings.sinusoidal(pos*2);
+						} else {
+							return easings.sinusoidal(1-(pos-0.5)*2);
+						}
+					}
+
+				};
+
+				var px = 'px',
+					 html = doc.documentElement,
+					 opasity = function () {
+					 	return typeof doc.createElement('a').style.opacity !== 'undefined';
+					 }(),
+					 unitless = { lineHeight: 1, zoom: 1, zIndex: 1, opacity: 1 },
+					 getStyle = doc.defaultView && doc.defaultView.getComputedStyle 
+					 	? function (el, property) {
+								var value = null;
+			          		var computed = doc.defaultView.getComputedStyle(el, '');
+			          		computed && (value = computed[camelize(property)]);
+			          		return el.style[property] || value;
+			        	  } 
+			         : html.currentStyle 
+			         ? function (el, property) {
+								property = camelize(property);
+			
+			          		if (property == 'opacity') {
+									var val = 100;
+									try {
+				              		val = el.filters['DXImageTransform.Microsoft.Alpha'].opacity;
+				            	} catch (e1) {
+				              		try {
+				                		val = el.filters('alpha').opacity;
+				              		} catch (e2) {}
+				            	}
+			            		return val / 100;
+			          		}
+			          		
+			          		var value = el.currentStyle ? el.currentStyle[property] : null;
+			          		return el.style[property] || value;
+			        	  }
+			         : function (el, property) {
+			         		return el.style[camelize(property)];
+			        	  },
+			
+					 rgb = function (r, g, b) {
+							return '#' + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+					 },
+			
+					 toHex = function (c) {
+							var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);
+			        		return (m ? rgb(m[1], m[2], m[3]) : c).replace(/#(\w)(\w)(\w)$/, '#$1$1$2$2$3$3'); // short to long
+					 },
+			
+					 // change font-size => fontSize etc.
+					 camelize = function (s) {
+							return s.replace(/-(.)/g, function (m, m1) {
+								return m1.toUpperCase();
+							});
+					 },
+			
+				frame = (function() {
+					// native animation frames
+					// http://webstuff.nfshost.com/anim-timing/Overview.html
+					// http://dev.chromium.org/developers/design-documents/requestanimationframe-implementation
+					return win.requestAnimationFrame 		|| 
+							 win.webkitRequestAnimationFrame || 
+							 win.mozRequestAnimationFrame    || 
+							 win.oRequestAnimationFrame      || 
+							 win.msRequestAnimationFrame     || 
+							 function(callback) {
+							 	win.setTimeout(function () {
+									callback(+new Date());
+								}, 10);
+							 };
+				}());
 				
-			}()),
+				function tween(duration, fn, done, ease, from, to) {
+					ease = ease || function (t) {
+			      	// default to a pleasant-to-the-eye easeOut (like native animations)
+			      	return Math.sin(t * Math.PI / 2)
+			    	};
+			    	var time = duration || 1000,
+						 diff = to - from,
+						 start = +new Date();
+			    
+					frame(run);
+			
+					function run(t) {
+						var delta = t - start;
+			      	if (delta > time) {
+							fn(isFinite(to) ? to : 1);
+							done && done();
+							return;
+			      	}
+			      
+			      	// if you don't specify a 'to' you can use tween as a generic delta tweener
+			      	// cool, eh?
+						to ? fn((diff * ease(delta / time)) + from) 
+							: fn(ease(delta / time));
+			      
+			      	frame(run);
+					}
+				}
+			
+				// this gets you the next hex in line according to a 'position'
+				function nextColor(pos, start, finish) {
+					var r = [], i, e;
+					for (i = 0; i < 6; i++) {
+				      from = Math.min(15, parseInt(start.charAt(i),  16));
+				      to   = Math.min(15, parseInt(finish.charAt(i), 16));
+				      e = Math.floor((to - from) * pos + from);
+				      e = e > 15 ? 15 : e < 0 ? 0 : e;
+			      	r[i] = e.toString(16);
+					}
+					return '#' + r.join('');
+				}
+			
+				function getVal(pos, options, begin, end, k, i, v) {
+					if (typeof begin[i][k] == 'string') {
+						return nextColor(pos, begin[i][k], end[i][k]);
+					} else {
+						// round so we don't get crazy long floats
+						v = Math.round(((end[i][k] - begin[i][k]) * pos + begin[i][k]) * 1000) / 1000;
+						
+						// some css properties don't require a unit (like zIndex, lineHeight, opacity)
+						!(k in unitless) && (v += px);
+						return v;
+					}
+				}
+			
+				// support for relative movement via '+=n' or '-=n'
+				function by(val, start, m, r, i) {
+			   	return (m = /^([+\-])=([\d\.]+)/.exec(val)) 
+			   		? (i = parseInt(m[2], 10)) && (r = (start + i)) && m[1] == '+' 
+			   			? r 
+			   			: start - i 
+			   		: parseInt(val, 10);
+				}
+			
+				/**
+			    * morpheus: main API method
+			    * elements: HTMLElement(s)
+			    * options: mixed bag between CSS Style properties & animation options
+			    *  - duration: time in ms - defaults to 1000ms
+			    *  - easing: a transition method - defaults to an 'easeOut' algorithm
+			    *  - complete: a callback method for when all elements have finished
+			    */
+				function morpheus(elements, options) {
+					var els = elements ? (els = isFinite(elements.length) ? elements : [elements]) : [], i,
+			      	 complete = options.complete,
+			        	 duration = options.duration,
+			        	 ease = easings[options.easing] || easings.easeIn,
+			        	 begin = [],
+			        	 end = [];
+			        	 
+					delete options.complete;
+					delete options.duration;
+					delete options.easing;
+			
+					for (i = els.length; i--;) {
+				      // record beginning and end states to calculate positions
+				      begin[i] = {};
+				      end[i] = {};
+				      
+				      for (var k in options) {
+				      	var v = getStyle(els[i], k);
+				        	begin[i][k] = typeof options[k] == 'string' && options[k].charAt(0) == '#' ?
+								v == 'transparent' ? // default to 'white' if transparent (fairly safe bet)
+				            'ffffff' :
+				            toHex(v).slice(1) : parseFloat(v, 10);
+							end[i][k] = typeof options[k] == 'string' && options[k].charAt(0) == '#' ? toHex(options[k]).slice(1) : by(options[k], parseFloat(v, 10));
+				      }
+				      
+					}
+			    
+					// one tween to rule them all
+			    	tween(duration, function (pos, v) {
+						// normally not a fan of optimizing for() loops, but we want something fast for animating
+						for (i = els.length; i--;) {
+							for (var k in options) {
+								v = getVal(pos, options, begin, end, k, i);
+								k == 'opacity' && !opasity 
+									? (els[i].style.filter = 'alpha(opacity=' + (v * 100) + ')') 
+									: (els[i].style[camelize(k)] = v);
+							}
+						}
+					}, complete, ease);
+				}
+			
+				morpheus.tween = tween;
+				
+				return morpheus;
+			
+			}(this, document, window)),
 			
 			/**
 			 * An event emitter facility which provides the observer(Publisher/Subscriber) design pattern to javascript objects
@@ -2079,8 +1585,8 @@
 	
 		// Return public API
 		return {
-			load: __standardizer.domready,
-			ajax: __standardizer.ajax,
+			ondomready: __standardizer.domready,
+			load: __standardizer.ajax,
 			events: __standardizer.events,
 			utils: __standardizer.utilities,
 			css: __standardizer.css,

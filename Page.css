@@ -2,8 +2,9 @@ body {
 	font-family: Arial;
 }
 
-#anim1 {
-	background:#f00;
+#anim1,
+#anim3 {
+	background-color:#f00;
 	left: 20px;
 	opacity: 0; /* IE equivalent */filter:alpha(opacity=0);
 	position: absolute;
@@ -11,11 +12,18 @@ body {
 }
 
 #anim2 {
-	background: #0f0;
+	background-color: #0f0;
 	border: 0px solid #00ff00;
 	position: absolute;
 	left: 20px;
 	top: 270px;
+}
+
+#anim3 {
+	background-color:#228b22;
+	height: 10px;
+	top: 300px;
+	width: 100px;
 }
 
 #container {
@@ -45,4 +53,15 @@ body {
 
 .cursor {
 	cursor: pointer;
+}
+
+.hideDD {
+	display: none;
+	height: 0;
+	margin-bottom: -20px;
+	opacity: 0; /* IE equivalent */filter:alpha(opacity=0);
+}
+
+.showDD {
+	display: block;
 }
