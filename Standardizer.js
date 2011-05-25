@@ -350,7 +350,7 @@
 						if (window.JSON !== undefined) {
 							return JSON.parse(xhr.responseText);
 						} 
-						// IE<8 hasn't a native JSON parser so we'll need to eval() the code - dangerous I know
+						// IE<8 hasn't a native JSON parser so instead of eval()'ing the code we'll use Douglas Crockford's json2 parse() method
 						else {
 							return __standardizer.json(xhr.responseText);
 							//return eval('(' + xhr.responseText + ')');
@@ -394,6 +394,7 @@
 				window.setTimeout(function() {
 					requestDone = true;
 					config.onComplete();
+					xhr.abort();
 				}, config.timeout);
 				
 				// Watch for when the state of the document gets updated
