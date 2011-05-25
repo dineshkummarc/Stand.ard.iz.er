@@ -1404,7 +1404,7 @@
 					var els = elements ? (els = isFinite(elements.length) ? elements : [elements]) : [], i,
 			      	 complete = options.complete,
 			        	 duration = options.duration,
-			        	 ease = easings[options.easing] || easings.easeIn,
+			        	 ease = easings[options.easing],
 			        	 begin = [],
 			        	 end = [];
 			        	 
