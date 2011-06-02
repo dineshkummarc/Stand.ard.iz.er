@@ -30,8 +30,12 @@
    		console.log('Time is: ' + new Date());
    	}
    	
+// DOM Ready Example
+
 		st.ondomready(time);
 		
+// AJAX Example
+
 		st.load({
 			url: 'JSON.php',
 			dataType: 'json',			
@@ -62,13 +66,15 @@
 			console.log('Window onLoad Event: ');
 			time();
 			
-			// Example of utilising jQuery's Sizzle CSS Selector Engine
+// Example of utilising jQuery's Sizzle CSS Selector Engine
+
 			var elem = st.find('.test');
 			for (var i = 0, len = elem.length; i < len; i++) {
 				elem[i].style.border = '1px solid red';
 			}
 			
-			// Event Management
+// Event Management
+
 			var div = document.getElementById('test');
 			var myFunc = function(e) {
 				console.log('myFunc event object: ', e); // standardised event object
@@ -78,13 +84,15 @@
 			};
 			st.events.add(div, 'click', myFunc);
 			
-			// Event Delegation Example
+// Event Delegation Example
+
 			function myDelegate(e) {
 				console.log('Delegate detected: ', e.target);
 			}
 			st.events.delegate(div, { searchForClassName: 'test', tag: 'p' }, 'click', myDelegate);
 			
-			// Animation Example						
+// Animation Example	
+					
 			var anim1 = document.getElementById('anim1'),
 				 anim2 = document.getElementById('anim2'),
 				 anim3 = document.getElementById('anim3');
@@ -121,13 +129,14 @@
 				easing: 'bouncePast'
 			});
 			
-			// Create Element Utility Example
+// Create Element Utility Example
+
 			console.log(st.utils.createElement('p'));
 			console.log(st.utils.createElement('p'));
 			console.log(st.utils.createElement('div'));
 		};
 		
-// Publish/Subscribe Example
+// Event Emitter (Publish/Subscribe) Example
 		
 		// Ticker is a class periodically sending out dummy tick events
 		var Ticker = function (interval) {
@@ -143,13 +152,26 @@
 		// Create a new instance of Ticker
 		var ticker = new Ticker();
 		
-		// Now bind the custom 'tick' event
-		ticker.bind('tick', function(date) {
-			// display to check
-			console.log('Notified data: ' + date);
-		});
+		// Keep track of the number of ticks so we can unbind.
+		var counter = 0;
 		
-// Bind Utility
+		function tickerFunction(date) {
+			// Display to check
+			console.log('Notified data: ' + date);
+			
+			// Increment counter
+			counter++;
+			
+			// Check counter
+			if (counter >= 3) {
+				ticker.unbind('tick', tickerFunction);
+			}
+		}
+		
+		// Now bind the custom 'tick' event
+		ticker.bind('tick', tickerFunction);		
+		
+// Bind Utility Example
 
 		// Manipulate explicit "this"
 		var x = 9, 
@@ -179,7 +201,7 @@
 		boundGetX();
 		// > 81
 		
-// Dictionary utility
+// Dictionary Utility Example
 
 		var colourMap = {
 				 red: '#FF0000',

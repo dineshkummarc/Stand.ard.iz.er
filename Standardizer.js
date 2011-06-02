@@ -1671,31 +1671,31 @@
 		__standardizer.utilities.Dictionary.prototype = {
 			
 			/**
-			 * s
+			 * The following method stores a new property and associated value
 			 * 
-			 * @param name {} x
-			 * @param value {} x
-			 * @return 
+			 * @param name { String } the property name to create
+			 * @param value { Value } the value to store under the specified property name
+			 * @return undefined {  } no explicitly returned value
 			 */
 			store: function(name, value) {
 				this.values[name] = value;
 			},
 			
 			/**
-			 * s
+			 * The following method checks the object for a named property.
 			 * 
-			 * @param name {} x
-			 * @return
+			 * @param name { String } the property name to lookup 
+			 * @return { Value } returns the value associated with the specified object property name
 			 */
 			lookup: function(name) {
 				return this.values[name];
 			},
 			
 			/**
-			 * s
+			 * The following method checks the object for a named property.
 			 * 
-			 * @param name {} x
-			 * @return
+			 * @param name { String } the property name to check for
+			 * @return { Boolean } returns whether the object contains a specified property name
 			 */
 			contains: function(name) {
 				return Object.prototype.hasOwnProperty.call(this.values, name) && 
