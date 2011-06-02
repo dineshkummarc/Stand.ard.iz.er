@@ -19,17 +19,17 @@ Features
 
 * Robust DOM Ready function
 * AJAX handler
-* Event Management (with normalised event object)
-* Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, bind, Dictionary)
-* CSS methods (getAppliedStyle, addClass, removeClass, hasClass, hasTransitions, whichTransition)
-* Animations library (based on [@ded](http://twitter.com/ded)'s [Morpheus](https://github.com/ded/morpheus/))
-* Event Emitter
+* Event Management (with normalised event object + has an event delegation method but code comments explain its limited use cases!)
+* Basic Utilities (toCamelCase, toHyphens, truncate, insertAfter, createElement (caches), getEl, getTag, getDocHeight, bind (MDN ES5 fallback), Dictionary etc)
+* CSS methods (getAppliedStyle, getArrayOfClassNames, addClass, removeClass, hasClass)
+* Animations library (based on [@ded](http://twitter.com/ded)'s [Morpheus](https://github.com/ded/morpheus/) )
+* Event Emitter (based on Publish/Subscriber(Observer) Design Pattern)
 * CSS Selector Engine (aka Sizzle... jQuery's selector engine)
 
-Upcoming Features
+TODO
 -----------------
 
-* Event Delegation Method
+* Make 'event delegation' more efficient and useful than current implementation
 * History Management
 
 Modular
@@ -43,7 +43,9 @@ And if you're not overly familiar with 'plain vanilla' JavaScript then this libr
 
 Size
 -----
-At the moment it's around 53k (original source) and approx 12k minified (+ even smaller when you use GZIP!) and on top of that you might not need all the included features so it'll be even less!
+At the moment it's around 53k (original source), approx 12k minified and approx 4.8k with GZIP compression! + on top of that you might not need all the included features so it'll be even less!
+
+Note: the reason I say 'approx' is because the features are constantly changing at the moment (as I find time to work on it) and so the size fluctuates.
 
 Concerns?
 ---------
