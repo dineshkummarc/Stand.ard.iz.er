@@ -1614,6 +1614,14 @@
 		
 		__standardizer.observer.prototype = {
 			
+			/**
+			 * The following method binds a custom 'event' to a handler function.
+			 * Whenever the custom event is triggered then the associated function is called.
+			 * 
+			 * @param event { String } the custom event to listen out for
+			 * @param fct { Function } the handler function to be associated with the custom event
+			 * @return undefined {  } no explicitly returned value
+			 */
 			bind: function(event, fct) {
 			
 				this._events = this._events || {};
@@ -1622,28 +1630,53 @@
 				
 			},
 			
+			/**
+			 * The following method removes the association of a handler function with a custom 'event'.
+			 * 
+			 * @param event { String } the custom event this function is associated with
+			 * @param fct { Function } the handler function associated with the custom event
+			 * @return undefined {  } no explicitly returned value (will return undefined if no event found)
+			 */
 			unbind: function(event, fct) {
 			
+				// Make sure that an object is available to be checked against (in the odd case where a user calls unbind before actually binding anything first!)
 				this._events = this._events || {};
 				
+				// If the event cannot be found then we return undefined
 				if( event in this._events === false) {	
 					return;
 				}
 				
+				// Removes the specified event from the list.
+				// splice( position of where to start changing Array, number of items from specified position to remove )
 				this._events[event].splice(this._events[event].indexOf(fct), 1);
 				
 			},
 			
+			/**
+			 * The following method can trigger a recognised (i.e. binded) custom event.
+			 * This will then call the associated handler function.
+			 * 
+			 * @param event { String } a custom event that has already been binded to a function
+			 * @param ? { ? } Optional arguments that are passed onto the handler function
+			 * @return undefined {  } no explicitly returned value (will return undefined if no event found)
+			 */
 			trigger: function(event /* , args... */) {
 				
+				// Make sure that an object is available to be checked against (in the odd case where a user calls trigger before actually binding anything first!)
 				this._events = this._events || {};
 				
+				// If the event cannot be found then we return undefined
 				if (event in this._events === false) {
 					return
 				};
 				
+				// Loop through the events list (executing any functions associated with the event)
 				for(var i = 0; i < this._events[event].length; i++) {
+				
+					// If any additional arguments are passed through to this 'trigger' method then we pass those onto the handler function
 					this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+					
 				}
 				
 			}

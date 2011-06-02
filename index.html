@@ -140,10 +140,18 @@
 		
 		// Ticker is a class periodically sending out dummy tick events
 		var Ticker = function (interval) {
+			
+			// Cache 'this' so we don't lose the scope inside the following Closure...
 			var self	= this;
+			
+			// Cause the custom event 'tick' to be triggered every five seconds
 			window.setInterval(function() {
+				
+				// We not only call the associated handler function but pass it an argument (in this example, the current date)
 				self.trigger('tick', new Date());
+				
 			}, 5000);
+			
 		};
 		
 		// Make Ticker support event emitter methods
