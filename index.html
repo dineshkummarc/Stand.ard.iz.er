@@ -17,10 +17,12 @@
    
 	<div id="test">
 		<p class="one intro">Paragraph one</p>
-		<p class="two test">Paragraph two</p>
+		<p class="two test">Paragraph two (has class="test")</p>
 		<p class="three">Paragraph three</p>
-		<p class="four test">Paragraph four</p>
-		<span class="test">this is a span with a class of 'test'</span>
+		<p class="four test">Paragraph four (has class="test")</p>
+		<span class="test">this is a span (has class="test")</span>
+		<p>Paragraph (no classes, just plain p tag)</p>
+		<p id="newtest">Paragraph (with an id of "newtest") and <span>this is a span element</span></p>
 	</div>
 	<script src="Sizzle.js"></script>
 	<script src="Standardizer.js"></script>
@@ -83,16 +85,8 @@
 				st.events.remove(div, 'click', myFunc);
 			};
 			st.events.add(div, 'click', myFunc);
-			
-// Event Delegation Example
-
-			function myDelegate(e) {
-				console.log('Delegate detected: ', e.target);
-			}
-			st.events.delegate(div, { searchForClassName: 'test', tag: 'p' }, 'click', myDelegate);
-			
+						
 // Animation Example	
-					
 			var anim1 = document.getElementById('anim1'),
 				 anim2 = document.getElementById('anim2'),
 				 anim3 = document.getElementById('anim3');

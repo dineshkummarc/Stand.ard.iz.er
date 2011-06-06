@@ -584,60 +584,6 @@
 					return returnValue;
 					
 				},
-				
-				/**
-				 * Mimicks Event Delegation.
-				 *
-				 * @note this method is inefficient when checking for more than one type of tag/className.
-				 *
-				 * E.g. 
-				 * 	st.events.delegate(container, { tag: 'form' }, 'mouseout', myFunc1);
-				 * 	st.events.delegate(container, { tag: 'input' }, 'mouseout', myFunc2);
-				 *
-				 * This effectively is adding two event handlers onto the 'container' element, which isn't what event delegation is about!
-				 * And there is no easy way to work around this (currently).
-				 *
-				 * @param parent { Element/Node } the element to use as the parent
-				 * @param options { Object } user must provide either a className OR a 'tag name' to match by
-				 * @param type { String } the event to listen for
-				 * @param handler { Function } the callback function to execute when the element has been found
-				 * @return undefined {  } no explicitly returned value
-				 */
-			 	delegate: function(parent, options, type, handler) {
-			 	
-			 		var searchFor = options.searchForClassName,
-			 			 tag = options.tag;
-			 		
-			 		this.add(parent, type, function(e) {
-	 					var targ = e.target,
-						 	 tagname = targ.tagName.toLowerCase();
-						 	 
-						if (tag === undefined && searchFor === undefined) {
-							throw new Error('you must provide the delegate method either a className or tagname value');
-						}
-						
-						// Just search by className (as no tagname was provided)
-						if (tag === undefined) {
-			 				if (st.css.hasClass(targ, searchFor)) {
-			 					handler(e);
-			 				}
-			 			} else {
-			 				// Just search by tagname (as no className was provided)
-			 				if (searchFor === undefined) {
-			 					if (tagname == tag) {
-									handler(e);
-								}
-			 				} 
-			 				// Otherwise search using both className and tagname
-			 				else {
-			 					if (tagname == tag && st.css.hasClass(targ, searchFor)) {
-									handler(e);
-								}
-			 				}	
-			 			}
-	 				});
-	 				
-			 	},
 								
 				/**
 				 * The standardize method produces a unified set of event properties, regardless of the browser
@@ -1022,6 +968,60 @@
 							bound.prototype = new nop();
 							return bound;
 
+						};
+					}
+					
+				}()),
+				
+				/**
+				 * The following method isn't callable via the 'utilities' namespace.
+				 * It actually modifies the native Array object so as to mimic indexOf feature which is a recent addition to the ECMA-262 standard.
+				 *
+				 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/indexOf#Compatibility
+				 */
+			 	indexOf: (function() { 
+					
+					if (!Array.prototype.indexOf) {
+				  		
+				  		Array.prototype.indexOf = function(searchElement /*, fromIndex */) {
+				    		"use strict";
+				
+				    		if (this === void 0 || this === null) {
+				    			throw new TypeError();
+				    		}
+				
+							var t = Object(this),
+								 len = t.length >>> 0,
+								 n = 0;
+							
+							if (len === 0) {
+								return -1;
+							}
+							
+							if (arguments.length > 0) {
+				      		n = Number(arguments[1]);
+								if (n !== n) { // shortcut for verifying if it's NaN
+									n = 0;
+								} else if (n !== 0 && n !== (1 / 0) && n !== -(1 / 0)) {
+				        			n = (n > 0 || -1) * Math.floor(Math.abs(n));
+				        		}
+							}
+				
+				    		if (n >= len) {
+				      		return -1;
+							}
+				
+				    		var k = n >= 0 
+				    			? n
+								: Math.max(len - Math.abs(n), 0);
+				
+							for (; k < len; k++) {
+								if (k in t && t[k] === searchElement) {
+									return k;
+				        		}
+							}
+							
+							return -1;
 						};
 					}
 					
@@ -1632,6 +1632,7 @@
 			
 			/**
 			 * The following method removes the association of a handler function with a custom 'event'.
+			 * Note: this function uses indexOf() method on the Array object (which IE < 9 doesn't support, so we augment the Array object to include it - see: utilities/indexOf method)
 			 * 
 			 * @param event { String } the custom event this function is associated with
 			 * @param fct { Function } the handler function associated with the custom event
