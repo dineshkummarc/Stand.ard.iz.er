@@ -25,6 +25,7 @@ Features
 * Animations library (based on [@ded](http://twitter.com/ded)'s [Morpheus](https://github.com/ded/morpheus/) )
 * Event Emitter (based on Publish/Subscriber(Observer) Design Pattern)
 * CSS Selector Engine (aka Sizzle... jQuery's selector engine)
+* Promises design pattern API (based on [@unscriptable](http://twitter.com/unscriptable)'s tiny implementation)
 
 TODO
 -----------------
