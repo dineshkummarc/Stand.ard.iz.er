@@ -236,6 +236,40 @@
 		// List all properties within this object
 		console.log('Dictionary Names: ', colours.names());
 		
+// Promise design pattern example
+
+		function imageLoader (src) {
+			var promise = new st.promise(),
+				 img = document.createElement('img');
+					 
+			img.onload = function () { 
+				promise.resolve(img); 
+			};
+				
+			img.onerror = function () { 
+				promise.reject(new Error('Image not found: ' + src));
+			};
+				
+			img.src = src;
+				
+			return promise;
+		}
+			
+		imageLoader('http://google.com/favicon.ico').then(
+			// Success - e.g. onResolve
+			function gotIt (img) {
+				document.body.appendChild(img);
+			},
+			// Fail - e.g. onReject
+			function doh (ex) {
+				document.body.appendChild(document.createTextNode(ex.message));
+			}
+		).then(
+			function shout (img) {
+				console.log('see my new ' + img.src + '?');
+			}
+		);
+		
    </script>
 </body>
 </html>
