@@ -945,6 +945,32 @@
 				}()),
 				
 				/**
+				 * Following property stores a reference to the core Object's toString() method.
+				 * This allows us to access JavaScript's internal [[Class]] property which helps us determine the type of certain primitives.
+				 * 
+				 * Example Usage:
+				 * 	__standardizer.utilities.getType([1, 2, 3]); 					// [object Array]
+				 * 	__standardizer.utilities.getType({ a: 1, b: 2, c: 3 }); 		// [object Object]
+				 * 	__standardizer.utilities.getType(123); 							// [object Number]
+				 * 	__standardizer.utilities.getType(new Date); 						// [object Date]
+				 * 	__standardizer.utilities.getType("String"); 						// [object String]
+				 * 
+				 * This doesn't work with null or undefined, because executing call() with null or undefined passes window as this.
+				 * This code is only useful for checking 'native' objects.
+				 * 
+				 * @return { String } the internal [[Class]] value for the specified object (i.e. the object's true data type)
+				 */
+				getType: (function() {
+					
+					var internal = {}.toString;
+					
+					return function(type) {
+						return internal.call(type);
+					};
+					
+				}()),
+				
+				/**
 				 * The following method isn't callable via the 'utilities' namespace.
 				 * It actually modifies the native Function object so as to mimic the functionality of new ECMAScript5 feature known as 'function binding'.
 				 * Similar functionality can be carried out with the standard Function.apply/call, but bind() is more flexible and easier syntax.
