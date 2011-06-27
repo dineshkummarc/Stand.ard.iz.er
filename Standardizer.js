@@ -1670,14 +1670,14 @@
 			 * Whenever the custom event is triggered then the associated function is called.
 			 * 
 			 * @param event { String } the custom event to listen out for
-			 * @param fct { Function } the handler function to be associated with the custom event
+			 * @param callback { Function } the handler function to be associated with the custom event
 			 * @return undefined {  } no explicitly returned value
 			 */
-			bind: function(event, fct) {
+			bind: function(event, callback) {
 			
 				this._events = this._events || {};
 				this._events[event] = this._events[event]	|| [];
-				this._events[event].push(fct);
+				this._events[event].push(callback);
 				
 			},
 			
@@ -1686,22 +1686,22 @@
 			 * Note: this function uses indexOf() method on the Array object (which IE < 9 doesn't support, so we augment the Array object to include it - see: utilities/indexOf method)
 			 * 
 			 * @param event { String } the custom event this function is associated with
-			 * @param fct { Function } the handler function associated with the custom event
+			 * @param callback { Function } the handler function associated with the custom event
 			 * @return undefined {  } no explicitly returned value (will return undefined if no event found)
 			 */
-			unbind: function(event, fct) {
+			unbind: function(event, callback) {
 			
 				// Make sure that an object is available to be checked against (in the odd case where a user calls unbind before actually binding anything first!)
 				this._events = this._events || {};
 				
 				// If the event cannot be found then we return undefined
-				if( event in this._events === false) {	
+				if(event in this._events === false) {	
 					return;
 				}
 				
 				// Removes the specified event from the list.
 				// splice( position of where to start changing Array, number of items from specified position to remove )
-				this._events[event].splice(this._events[event].indexOf(fct), 1);
+				this._events[event].splice(this._events[event].indexOf(callback), 1);
 				
 			},
 			
