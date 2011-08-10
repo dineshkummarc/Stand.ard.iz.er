@@ -278,11 +278,13 @@
 	var date = new Date;
 	var string = "String";
 
-	console.log( '[[Class]] Array = ', st.utils.getType(arr) );
-	console.log( '[[Class]] Object = ', st.utils.getType(obj) );
-	console.log( '[[Class]] Number = ', st.utils.getType(num) );
-	console.log( '[[Class]] Date = ', st.utils.getType(date) );
-	console.log( '[[Class]] String = ', st.utils.getType(string) );
+	console.log( '[[Class]] Array = '	, st.utils.getType(arr)		);
+	console.log( '[[Class]] Object = '	, st.utils.getType(obj)		);
+	console.log( '[[Class]] Number = '	, st.utils.getType(num)		);
+	console.log( '[[Class]] Date = '		, st.utils.getType(date)	);
+	console.log( '[[Class]] String = '	, st.utils.getType(string)	);
+	console.log( '[[Class]] Global = '	, st.utils.getType(this)	);
+	console.log( '[[Class]] Global = '	, st.utils.getType(window)	);
 		
    </script>
 </body>
