@@ -1,0 +1,52 @@
+body {
+	font:300 13px helvetica neue;
+}
+
+button {
+	padding:7px;
+	width:50px;
+	cursor:pointer;
+}
+
+h1,h2 {
+	font-weight:300;
+	margin:0;
+	padding:0;
+}
+
+h1 {
+	font-size:36px;
+}
+
+#doc {
+	width:550px;
+	margin:0 auto;
+}
+
+.stage {
+	padding:50px;
+	background:#eee;
+	border-radius:10px;
+	border:1px solid #bbb;
+	margin:15px 0;
+	position:relative;
+	overflow:hidden;
+}
+
+.box {
+	top:0;
+	left:0;
+	position:relative;
+	width:20px;
+	height:20px;
+	border-radius:4px;
+	background:red;
+	margin:5px 0;
+	border:1px solid #999;
+	-moz-border-radius:4px;
+	-webkit-border-radius:4px;
+}
+
+#last {
+	margin-bottom:100px;
+}
