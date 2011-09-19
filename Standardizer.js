@@ -1,5 +1,81 @@
 (function(window, document, undef) {
 	
+	/**
+	 * The following immediately invoked function expression checks the native Function object 
+	 * for a native implementation of Function#bind and if it doesn't find one it modifies the Native object
+	 * to include a pollyfill which mimics the new ECMAScript5 feature known as 'function binding'.
+	 *
+	 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
+	 */
+ 	if (!Function.prototype.bind) {
+		Function.prototype.bind = function(obj) {
+		
+			var slice = [].slice,
+				 args = slice.call(arguments, 1),
+				 self = this,
+				 nop = function(){},
+				 bound = function() {
+				 	return self.apply(this instanceof nop ? this : (obj || {}), args.concat(slice.call(arguments)));
+				 };
+			
+			nop.prototype = self.prototype;
+			bound.prototype = new nop();
+			return bound;
+
+		};
+	}
+	
+	/**
+	 * The following immediately invoked function expression checks the native Array object 
+	 * for a native implementation of Array#indexOf and if it doesn't find one it modifies the Native object
+	 * to include a pollyfill which mimics the indexOf feature (which is a recent addition to the ECMA-262 standard).
+	 *
+	 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/indexOf#Compatibility
+	 */
+ 	if (!Array.prototype.indexOf) {
+  		
+  		Array.prototype.indexOf = function(searchElement /*, fromIndex */) {
+    		"use strict";
+
+    		if (this === void 0 || this === null) {
+    			throw new TypeError();
+    		}
+
+			var t = Object(this),
+				 len = t.length >>> 0,
+				 n = 0;
+			
+			if (len === 0) {
+				return -1;
+			}
+			
+			if (arguments.length > 0) {
+      		n = Number(arguments[1]);
+				if (n !== n) { // shortcut for verifying if it's NaN
+					n = 0;
+				} else if (n !== 0 && n !== (1 / 0) && n !== -(1 / 0)) {
+        			n = (n > 0 || -1) * Math.floor(Math.abs(n));
+        		}
+			}
+
+    		if (n >= len) {
+      		return -1;
+			}
+
+    		var k = n >= 0 
+    			? n
+				: Math.max(len - Math.abs(n), 0);
+
+			for (; k < len; k++) {
+				if (k in t && t[k] === searchElement) {
+					return k;
+        		}
+			}
+			
+			return -1;
+		};
+	}
+	
 	// Stand.ard.iz.er library
 	var standardizer = (function(){
 	
@@ -982,89 +1058,6 @@
 				}()),
 				
 				/**
-				 * The following method isn't callable via the 'utilities' namespace.
-				 * It actually modifies the native Function object so as to mimic the functionality of new ECMAScript5 feature known as 'function binding'.
-				 * Similar functionality can be carried out with the standard Function.apply/call, but bind() is more flexible and easier syntax.
-				 *
-				 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
-				 */
-			 	bind: (function() { 
-					
-					if (!Function.prototype.bind) {
-						Function.prototype.bind = function(obj) {
-						
-							var slice = [].slice,
-								 args = slice.call(arguments, 1),
-								 self = this,
-								 nop = function(){},
-								 bound = function() {
-								 	return self.apply(this instanceof nop ? this : (obj || {}), args.concat(slice.call(arguments)));
-								 };
-							
-							nop.prototype = self.prototype;
-							bound.prototype = new nop();
-							return bound;
-
-						};
-					}
-					
-				}()),
-				
-				/**
-				 * The following method isn't callable via the 'utilities' namespace.
-				 * It actually modifies the native Array object so as to mimic indexOf feature which is a recent addition to the ECMA-262 standard.
-				 *
-				 * @reference https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/indexOf#Compatibility
-				 */
-			 	indexOf: (function() { 
-					
-					if (!Array.prototype.indexOf) {
-				  		
-				  		Array.prototype.indexOf = function(searchElement /*, fromIndex */) {
-				    		"use strict";
-				
-				    		if (this === void 0 || this === null) {
-				    			throw new TypeError();
-				    		}
-				
-							var t = Object(this),
-								 len = t.length >>> 0,
-								 n = 0;
-							
-							if (len === 0) {
-								return -1;
-							}
-							
-							if (arguments.length > 0) {
-				      		n = Number(arguments[1]);
-								if (n !== n) { // shortcut for verifying if it's NaN
-									n = 0;
-								} else if (n !== 0 && n !== (1 / 0) && n !== -(1 / 0)) {
-				        			n = (n > 0 || -1) * Math.floor(Math.abs(n));
-				        		}
-							}
-				
-				    		if (n >= len) {
-				      		return -1;
-							}
-				
-				    		var k = n >= 0 
-				    			? n
-								: Math.max(len - Math.abs(n), 0);
-				
-							for (; k < len; k++) {
-								if (k in t && t[k] === searchElement) {
-									return k;
-				        		}
-							}
-							
-							return -1;
-						};
-					}
-					
-				}()),
-				
-				/**
 				 * The following method is a Constructor with additional methods attached to the prototype
 				 * which aid every time you need to check whether a property is present in an object.
 				 * We approach an object as just a set of properties.
@@ -1696,29 +1689,367 @@
 		 	observer: function(){},
 			
 			/**
-			 * A very simple implementation of the Promises design pattern.
-			 * It's small and fast.
-			 * 
-			 * There are a few major problems with this promise that keep it from being useful outside of a constrained environment:
+			 * @license Copyright (c) 2011 Brian Cavalier
+			 * LICENSE: see the LICENSE.txt file. If file is missing, this file is subject
+			 * to the MIT License at: http://www.opensource.org/licenses/mit-license.php.
 			 *
-			 * 1. It modifies it's own public API:
-			 *		The then(), resolve(), and reject() methods are rewritten when the promise is completed (i.e. resolved or rejected). 
-			 * 	There's nothing inherently wrong with this unless some other code is overriding 
-			 * 	or hijacking the public methods (in which case, they'd be overriding the obsolete methods)
-			 *
-			 * 2. It doesn't distinguish between the "front end" API and the "back end" API:
-			 * 	If some other code decided to call our reject() method, it could.
-			 * 	We would typically want to hide our back end API from outside code.
-			 *
-			 * Modified from @unscriptable's version: 
-			 * https://gist.github.com/814052
-			 *
-			 * @notes All methods are added via the prototype chain (see below)
-			 * Lastly, as it's a constructor we'll use the correct naming convention of using a capitalised first letter.
+			 * File: when.js
+			 * Version: 0.9.2
 			 */
-		 	Promise: function() {
-		 		this._thens = [];
-		 	}
+			promises: (function() {
+				
+				// No-op function used in function replacement in various
+				// places below.
+				function noop() {}
+			
+				var freeze = Object.freeze || noop;
+			
+				/*
+					Function: Deferred
+					Creates a new, CommonJS compliant, Deferred with fully isolated
+					resolver and promise parts, either or both of which may be given out
+					safely to consumers.
+					The Deferred itself has the full API: resolve, reject, progress, and
+					then. The resolver has resolve, reject, and progress.  The promise
+					only has then.
+				*/
+				function defer() {
+					var deferred, promise, resolver, result, listeners, tail,
+						_then, _progress, complete;
+			
+					_then = function(callback, errback, progback) {
+						var d, listener;
+			
+						listener = {
+							deferred: (d = defer()),
+							resolve: callback,
+							reject: errback,
+							progress: progback
+						};
+			
+						if(listeners) {
+							// Append new listener if linked list already initialized
+							tail = tail.next = listener;
+						} else {
+							// Init linked list
+							listeners = tail = listener;
+						}
+			
+						return d.promise;
+					};
+			
+					function then(callback, errback, progback) {
+						return _then(callback, errback, progback);
+					}
+			
+					function resolve(val) { 
+						complete('resolve', val);
+					}
+			
+					function reject(err) {
+						complete('reject', err);
+					}
+					
+					_progress = function(update) {
+						var listener, progress;
+						
+						listener = listeners;
+			
+						while(listener) {
+							progress = listener.progress;
+							if(progress) progress(update);
+							listener = listener.next;
+						}
+					};
+			
+					function progress(update) {
+						_progress(update);
+					}
+			
+					complete = function(which, val) {
+						// Save original thenImpl
+						var origThen = _then;
+			
+						// Replace thenImpl with one that immediately notifies
+						// with the result.
+						_then = function newThen(callback, errback) {
+							var promise = origThen(callback, errback);
+							notify(which);
+							return promise;
+						};
+			
+						// Replace complete so that this Deferred
+						// can only be completed once.  Note that this leaves
+						// notify() intact so that it can be used in the
+						// rewritten thenImpl above.
+						// Replace progressImpl, so that subsequent attempts
+						// to issue progress throw.
+						complete = _progress = function alreadyCompleted() {
+							throw new Error("already completed");
+						};
+			
+						// Final result of this Deferred.  This is immutable
+						result = val;
+			
+						// Notify listeners
+						notify(which);
+					};
+			
+			        function notify(which) {
+			            // Traverse all listeners registered directly with this Deferred,
+						// also making sure to handle chained thens
+						while(listeners) {
+							var listener, ldeferred, newResult, handler;
+			
+							listener  = listeners;
+							ldeferred = listener.deferred;
+							listeners = listeners.next;
+			
+							handler = listener[which];
+							if(handler) {
+								try {
+									newResult = handler(result);
+			
+									if(isPromise(newResult)) {
+										// If the handler returned a promise, chained deferreds
+										// should complete only after that promise does.
+										newResult.then(ldeferred.resolve, ldeferred.reject, ldeferred.progress);
+									
+									} else {
+										// Complete deferred from chained then()
+										// FIXME: Which is correct?
+										// The first always mutates the chained value, even if it is undefined
+										// The second will only mutate if newResult !== undefined
+										// ldeferred[which](newResult);
+										
+										ldeferred[which](newResult === undef ? result : newResult);							
+			
+									}
+								} catch(e) {
+									// Exceptions cause chained deferreds to complete
+									// TODO: Should it *also* switch this promise's handlers to failed??
+									// I think no.
+									// which = 'reject';
+			
+									ldeferred.reject(e);
+								}
+							}
+						}			
+					}
+			
+					// The full Deferred object, with both Promise and Resolver parts
+					deferred = {};
+			
+					// Promise and Resolver parts
+			
+					// Expose Promise API
+					promise = deferred.promise  = {
+						then: (deferred.then = then)
+					};
+			
+					// Expose Resolver API
+					resolver = deferred.resolver = {
+						resolve:  (deferred.resolve  = resolve),
+						reject:   (deferred.reject   = reject),
+						progress: (deferred.progress = progress)
+					};
+			
+					// Freeze Promise and Resolver APIs
+					freeze(promise);
+					freeze(resolver);
+			
+					return deferred;
+				}
+			
+				/*
+					Function: isPromise
+					Determines if promiseOrValue is a promise or not.  Uses the feature
+					test from http://wiki.commonjs.org/wiki/Promises/A to determine if
+					promiseOrValue is a promise.
+			
+					Parameters:
+						promiseOrValue - anything
+			
+					Return:
+					true if and only if promiseOrValue is a promise.
+				*/
+				function isPromise(promiseOrValue) {
+					return promiseOrValue && typeof promiseOrValue.then === 'function';
+				}
+			
+				/*
+					Function: when
+				*/
+				function when(promiseOrValue, callback, errback, progressHandler) {
+					var deferred = defer();
+			
+					function resolve(value) {
+						return callback ? callback(value) : value;
+					}
+			
+					function reject(err) {
+						return errback ? errback(err) : err;
+					}
+			
+					function progress(update) {
+						progressHandler(update);
+					}
+					
+					if(isPromise(promiseOrValue)) {
+						// If it's a promise, ensure that deferred will complete when promiseOrValue
+						// completes.
+						promiseOrValue.then(resolve, reject, progress);
+						deferred = _chain(promiseOrValue, deferred);
+			
+					} else {
+						// If it's a value, resolve immediately
+						deferred.resolve(resolve(promiseOrValue));
+			
+					}
+			
+					return deferred.promise;
+				}
+			
+				/*
+					Function: some
+				*/
+				function some(promisesOrValues, howMany, callback, errback, progressHandler) {
+					var toResolve, results, ret, deferred, resolver, rejecter, handleProgress;
+			
+					toResolve = Math.max(0, Math.min(howMany, promisesOrValues.length));
+					results = [];
+					deferred = defer();
+					ret = (callback || errback || progressHandler)
+						? deferred.then(callback, errback, progressHandler)
+						: deferred.promise;
+			
+					// Resolver for promises.  Captures the value and resolves
+					// the returned promise when toResolve reaches zero.
+					// Overwrites resolver var with a noop once promise has
+					// be resolved to cover case where n < promises.length
+					resolver = function(val) {
+						results.push(val);
+						if(--toResolve === 0) {
+							resolver = handleProgress = noop;
+							deferred.resolve(results);
+						}
+					};
+			
+					// Wrapper so that resolver can be replaced
+					function resolve(val) {
+						resolver(val);
+					}
+			
+					// Rejecter for promises.  Rejects returned promise
+					// immediately, and overwrites rejecter var with a noop
+					// once promise to cover case where n < promises.length.
+					// TODO: Consider rejecting only when N (or promises.length - N?)
+					// promises have been rejected instead of only one?
+					rejecter = function(err) {
+						rejecter = handleProgress = noop;
+						deferred.reject(err);		
+					};
+			
+					// Wrapper so that rejecer can be replaced
+					function reject(err) {
+						rejecter(err);
+					}
+			
+					handleProgress = function(update) {
+						deferred.progress(update);
+					};
+			
+					function progress(update) {
+						handleProgress(update);
+					}
+			
+					if(toResolve === 0) {
+						deferred.resolve(results);
+					} else {
+						var promiseOrValue, i = 0;
+						while((promiseOrValue = promisesOrValues[i++])) {
+							when(promiseOrValue, resolve, reject, progress);
+						}			
+					}
+			
+					return ret;
+				}
+			
+				/*
+					Function: all
+				*/
+				function all(promisesOrValues, callback, errback, progressHandler) {
+					return some(promisesOrValues, promisesOrValues.length, callback, errback, progressHandler);
+				}
+			
+				/*
+					Function: any
+				*/
+				function any(promisesOrValues, callback, errback, progressHandler) {
+					return some(promisesOrValues, 1, callback, errback, progressHandler);
+				}
+			
+				/*
+					Function: chain
+					Chain a promise to a resolver such that when the first completes, the second
+					is completed with either the completion value of the first, or
+					in the case of resolve, completed with the optional resolveValue.
+			
+					Parameters:
+						promiseOrValue - Promise, that when completed, will trigger completion of resolver, or
+							value that will trigger immediate resolution of resolver
+						resolver - Resolver to complete when promise completes
+						resolveValue - optional value to use as the resolution value
+							used to resolve second, rather than the resolution
+							value of first.
+					
+					Returns:
+						a new Promise that will be resolved when resolver is completed, with
+						its completion value.
+				*/
+				function chain(promiseOrValue, resolver, resolveValue) {
+					var inputPromise, initChain;
+			
+					inputPromise = when(promiseOrValue);
+			
+					// Check against args length instead of resolvedValue === undefined, since
+					// undefined may be a valid resolution value.
+					initChain = arguments.length > 2
+						? function(resolver) { return _chain(inputPromise, resolver, resolveValue) }
+						: function(resolver) { return _chain(inputPromise, resolver); };
+			
+					// Setup chain to supplied resolver
+					initChain(resolver);
+			
+					// Setup chain to new promise
+					return initChain(when.defer()).promise;
+				}
+			
+				function _chain(promise, deferred, resolveValue) {
+					var args = arguments;
+					promise.then(
+						function(val)    { deferred.resolve(args.length > 2 ? resolveValue : val); },
+						function(err)    { deferred.reject(err); },
+						function(update) { deferred.progress(update); }
+					);
+			
+					return deferred;
+				}
+			
+				/*
+					Section: Public API
+				*/
+			
+				when.defer     = defer;			
+				when.isPromise = isPromise;
+				when.some      = some;
+				when.all       = all;
+				when.any       = any;
+				when.chain     = chain;
+			
+				return when;
+			
+			}())
 			
 		};
 		
@@ -1810,76 +2141,6 @@
 			
 		};
 		
-		// Here follows is the prototype for the Promise Constructor
-		// See: __standardizer.Promise
-		__standardizer.Promise.prototype = {
-			/* This is the "front end" API. */
-
-			// then(onResolve, onReject): Code waiting for this promise uses the
-			// then() method to be notified when the promise is complete. There
-			// are two completion callbacks: onReject and onResolve. A more
-			// robust promise implementation will also have an onProgress handler.
-			then: function (onResolve, onReject) {
-				// capture calls to then()
-				this._thens.push({ 
-					resolve: onResolve, 
-					reject: onReject 
-				});
-				
-				return this;
-			},
-		
-			// Some promise implementations also have a cancel() front end API that
-			// calls all of the onReject() callbacks (aka a "cancelable promise").
-			// cancel: function (reason) {},
-		
-			/* This is the "back end" API. */
-		
-			// resolve(resolvedValue): The resolve() method is called when a promise
-			// is resolved (duh). The resolved value (if any) is passed by the
-			// resolver to this method. All waiting onResolve callbacks are called
-			// and any future ones are, too, each being passed the resolved value.
-			resolve: function (val) { 
-				this._complete('resolve', val);
-			},
-		
-			// reject(exception): The reject() method is called when a promise cannot
-			// be resolved. Typically, you'd pass an exception as the single 
-			// parameter, but any other argument, including none at all, is 
-			// acceptable. All waiting and all future onReject callbacks are called 
-			// when reject() is called and are passed the exception parameter.
-			reject: function (ex) { 
-				this._complete('reject', ex); 
-			},
-		
-			// Some promises may have a progress handler. The back end API to signal
-			// a progress "event" has a single parameter. The contents of this 
-			// parameter could be just about anything and is specific to your
-			// implementation.
-			// progress: function (data) {},
-		
-			/* "Private" methods. */
-		
-			_complete: function (which, arg) {
-				// switch over to sync then()
-				this.then = which === 'resolve' ?
-					function (resolve, reject) { resolve && resolve(arg); return this; } :
-					function (resolve, reject) { reject && reject(arg); return this; };
-					
-				// disallow multiple calls to resolve or reject
-				this.resolve = this.reject = function() { 
-					throw new Error('Promise already completed.'); 
-				};
-					
-				// complete all waiting (async) then()s
-				var aThen, i = 0;
-				while (aThen = this._thens[i++]) { 
-					aThen[which] && aThen[which](arg); 
-				}
-				delete this._thens;
-			}
-		};
-		
 		// Here follows is the prototype for the Dictionary Constructor
 		// See: __standardizer.utilities.dictionary
 		__standardizer.utilities.Dictionary.prototype = {
@@ -1957,7 +2218,7 @@
 			css: __standardizer.css,
 			observe: __standardizer.observer,
 			anim: __standardizer.animation,
-			promise: __standardizer.Promise,
+			promises: __standardizer.promises,
 			find: Sizzle // Integrates the Sizzle CSS Selector Engine (http://sizzlejs.com/) as used by jQuery and other Js Frameworks
 		};
 		

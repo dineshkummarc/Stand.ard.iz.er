@@ -1,0 +1,221 @@
+<!doctype html>
+<html dir="ltr" lang="en">
+<head>
+	<title></title>
+   <meta charset="utf-8">
+   <meta name="author" content="Mark McDonnell" />
+   <link rel="stylesheet" href="Page.css" />
+</head>
+<body>
+	<h1>Standardizer: API</h1>
+	<p>The <code>st</code> namespace returns an object:</p>
+	<pre>
+{
+	<a href="#isie">isIE</a>: __standardizer.isIE, <span>// not by default - needs to be made public as shown here</span>
+	<a href="#ondomready">ondomready</a>: __standardizer.domready,
+	<a href="#load">load</a>: __standardizer.ajax,
+	<a href="#events">events</a>: __standardizer.events,
+	<a href="#utils">utils</a>: __standardizer.utilities,
+	<a href="#css">css</a>: __standardizer.css,
+	<a href="#observe">observe</a>: __standardizer.observer,
+	<a href="#anim">anim</a>: __standardizer.animation,
+	<a href="#promise">promise</a>: __standardizer.Promise
+}
+	</pre>
+	<h2 id="isie">isIE</h2>
+	<p>Returns undefined for all browsers except IE where it will return the version number</p>
+	<h2 id="ondomready">OnDOMReady</h2>
+	<p>Cross browser DOMContentLoaded function (pass it a function you want to run when the DOM has loaded - but before the window.onload event fires)</p>
+	<p><code>st.ondomready(myFunction);</code></p>
+	<h2 id="load">Load</h2>
+	<p>AJAX method</p>
+	<pre>
+st.load({
+	url: 'JSON.php',
+	dataType: 'json',            
+	onSuccess: function(resp) {
+		<span>// {"a":1,"b":2,"c":3,"d":4,"e":5}</span>
+		console.log(resp['a'], resp['b'], resp['c'], resp['d'], resp['e']);
+	}
+});
+	</pre>
+	<h2 id="events">Events</h2>
+	<p>Event system</p>
+	<ul>
+		<li>add<br><code>st.events.add(element, eventType, handler);</code></li>
+		<li>remove<br><code>st.events.remove(element, eventType, handler);</code></li>
+	</ul>
+	<p>Also modifies/standardizes the event object across browsers so when accessing the event object you have access to&hellip;</p>
+	<ul>
+		<li><code>type</code><br>The event type</li>
+		<li><code>target</code><br>The target is the element the event occurred on</li>
+		<li><code>relatedTarget</code><br>The relatedTarget is the element the event was listening for</li>
+		<li><code>key</code><br>If the event was a keyboard-related one, key returns the character</li>
+		<li><code>pageX</code><br><code>pageY</code><br>Return the x and y coordinates of the mouse pointer, relative to the document</li>
+		<li><code>offsetX</code><br><code>offsetY</code><br>Return the x and y coordinates of the mouse pointer, relative to the element the current event occurred on</li>
+		<li><code>preventDefault()</code><br>The preventDefault method stops the default event of the element from triggering</li>
+	</ul>
+	<h2 id="utils">Utils</h2>
+	<p>A few useful utility methods</p>
+	<ul>
+		<li>toCamelCase</li>
+		<li>toHyphens</li>
+		<li>truncate</li>
+		<li>insertAfter</li>
+		<li>createElement (this caches the elements created so it's faster to create the same elements over and over)</li>
+		<li>getEl</li>
+		<li>getTag</li>
+		<li>getDocHeight</li>
+		<li>getType</li>
+		<li>Dictionary (this is an object lookup method)
+			<ul>
+				<li>store</li>
+				<li>lookup</li>
+				<li>contains</li>
+				<li>each</li>
+				<li>names
+					<pre>
+var colourMap = {
+        red: '#FF0000',
+        yellow: '#FFFF00',
+        pink: '#FF00FF',
+        green: '#00FF00',
+        orange: '#FF6600',
+        purple: '#9900FF',
+        blue: '#0000FF'
+	 }, 
+    colours = new st.utils.Dictionary(colourMap);
+
+<span>// Add a new property to this object</span>
+colours.store('white', '#FFFFFF');
+console.log('Dictionary Lookup: ', colours.lookup('white'));
+
+<span>// Lookup the value for a specific property in this object</span>
+console.log('Dictionary Lookup: ', colours.lookup('red'));
+
+<span>// Does the object contain a property called 'orange'?</span>
+<span>// Notice in the example after that it is a case sensitive search.</span>
+console.log('Dictionary Contains: ', colours.contains('orange'));
+console.log('Dictionary Contains: ', colours.contains('Orange'));
+
+<span>// Do something for each property in this object</span>
+colours.each(function(name, val) {
+   console.log('Dictionary Each: ', name + ' is ' + val);
+});
+
+<span>// List all properties within this object</span>
+console.log('Dictionary Names: ', colours.names());
+					</pre>
+				</li>
+			</ul>
+		</li>
+	</ul>
+	<h2 id="css">CSS</h2>
+	<p>Useful CSS methods</p>
+	<ul>
+		<li>getAppliedStyle</li>
+		<li>getArrayOfClassNames</li>
+		<li>addClass</li>
+		<li>removeClass</li>
+		<li>hasClass</li>
+	</ul>
+	<h2 id="observe">Observe</h2>
+	<p>This is the Publisher/Subscriber design pattern implemented in JavaScript (also known as the Observer pattern, or an Event Emitter)</p>
+	<ul>
+		<li>bind</li>
+		<li>unbind</li>
+		<li>trigger</li>
+	</ul>
+	<pre>
+<span>// Ticker is a class periodically sending out dummy tick events</span>
+var Ticker = function (interval) {
+   
+   <span>// Cache 'this' so we don't lose the scope inside the following Closure...</span>
+   var self    = this;
+   
+   <span>// Cause the custom event 'tick' to be triggered every five seconds</span>
+   window.setInterval(function() {
+       
+       <span>// We not only call the associated handler function but pass it an argument (in this example, the current date)</span>
+       self.trigger('tick', new Date());
+       
+   }, 5000);
+   
+};
+
+<span>// Make Ticker support event emitter methods</span>
+st.observe.mixin(Ticker);
+
+<span>// Create a new instance of Ticker</span>
+var ticker = new Ticker();
+
+<span>// Keep track of the number of ticks so we can unbind.</span>
+var counter = 0;
+
+function tickerFunction(date) {
+   <span>// Display to check</span>
+   console.log('Notified data: ' + date);
+   
+   <span>// Increment counter</span>
+   counter++;
+   
+   <span>// Check counter</span>
+   if (counter >= 3) {
+       ticker.unbind('tick', tickerFunction);
+   }
+}
+
+<span>// Now bind the custom 'tick' event</span>
+ticker.bind('tick', tickerFunction);
+	</pre>
+	<h2 id="anim">Anim</h2>
+	<p>An animation library</p>
+	<pre>
+var myelement = document.getElementById('anim');
+            
+st.anim(myelement, {
+    complete: function() {
+        console.log('animation finished');
+    },
+    duration: 2000,
+    easing: 'easeOut',
+    left: '500px'
+});
+	</pre>
+	<h2 id="promise">Promise</h2>
+	<p>This is a VERY basic implementation of the Promises design pattern (also known in jQuery as Deferreds)</p>
+	<pre>
+function imageLoader (src) {
+   var promise = new st.promise(),
+        img = document.createElement('img');
+            
+   img.onload = function () { 
+       promise.resolve(img); 
+   };
+       
+   img.onerror = function () { 
+       promise.reject(new Error('Image not found: ' + src));
+   };
+       
+   img.src = src;
+       
+   return promise;
+}
+   
+imageLoader('http://google.com/favicon.ico').then(
+   <span>// Success - e.g. onResolve</span>
+   function gotIt (img) {
+       document.body.appendChild(img);
+   },
+   <span>// Fail - e.g. onReject</span>
+   function doh (ex) {
+       document.body.appendChild(document.createTextNode(ex.message));
+   }
+).then(
+   function shout (img) {
+       console.log('see my new ' + img.src + '?');
+   }
+);
+	</pre>
+</body>
+</html>

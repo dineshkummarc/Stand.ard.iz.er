@@ -2,6 +2,33 @@ body {
 	font-family: Arial;
 }
 
+code,
+pre {
+	color: blue;
+	font-size: 120%;
+}
+
+pre a {
+	color: navy;
+}
+
+pre a:hover,
+pre a:focus {
+	text-decoration: none;
+}
+
+pre span {
+	color: #999;
+}
+
+p {
+	margin: 0 0 10px;
+}
+
+h2 {
+	margin-bottom: 0;
+}
+
 #anim1,
 #anim3 {
 	background-color:#f00;

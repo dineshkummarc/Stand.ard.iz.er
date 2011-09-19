@@ -179,7 +179,7 @@
 		var x = 9, 
 		    module = {
 		    	getX: function() { 
-		      	console.log(this.x); 
+		      	console.log('Binded method', this.x); 
 		      },
 		    	x: 81
 		    };
@@ -239,15 +239,18 @@
 // Promise design pattern example
 
 		function imageLoader (src) {
-			var promise = new st.promise(),
+			var deferred = st.promises.defer(), // Create a new Deferred object
+				 promise = deferred.promise, // reference the promise for this new Defer instance
 				 img = document.createElement('img');
 					 
 			img.onload = function () { 
-				promise.resolve(img); 
+				window.setTimeout(function() {
+					deferred.resolve(img);
+				}, 8000); // delay the resolve by 8 seconds so we can see how the async operation would work in a real world situation
 			};
 				
-			img.onerror = function () { 
-				promise.reject(new Error('Image not found: ' + src));
+			img.onerror = function () {
+				deferred.reject(new Error('Image not found: ' + src));
 			};
 				
 			img.src = src;
@@ -258,17 +261,20 @@
 		imageLoader('http://google.com/favicon.ico').then(
 			// Success - e.g. onResolve
 			function gotIt (img) {
+				console.log('img request was a success!');
 				document.body.appendChild(img);
 			},
 			// Fail - e.g. onReject
 			function doh (ex) {
+				console.log('there was an error');
 				document.body.appendChild(document.createTextNode(ex.message));
 			}
 		).then(
 			function shout (img) {
-				console.log('see my new ' + img.src + '?');
+				console.log('Im the 2nd then() call. see my new ' + img.src + '?');
 			}
 		);
+		
 
 // Example of internal [[Class]] access to determine an objects true data type
 	
