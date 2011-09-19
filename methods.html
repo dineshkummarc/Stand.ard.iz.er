@@ -19,7 +19,7 @@
 	<a href="#css">css</a>: __standardizer.css,
 	<a href="#observe">observe</a>: __standardizer.observer,
 	<a href="#anim">anim</a>: __standardizer.animation,
-	<a href="#promise">promise</a>: __standardizer.Promise
+	<a href="#promises">promises</a>: __standardizer.promises
 }
 	</pre>
 	<h2 id="isie">isIE</h2>
@@ -182,39 +182,44 @@ st.anim(myelement, {
     left: '500px'
 });
 	</pre>
-	<h2 id="promise">Promise</h2>
-	<p>This is a VERY basic implementation of the Promises design pattern (also known in jQuery as Deferreds)</p>
+	<h2 id="promises">Promises</h2>
+	<p>Brian Cavalier's When.js implementation of the Promises design pattern (also known in jQuery as Deferreds)</p>
 	<pre>
 function imageLoader (src) {
-   var promise = new st.promise(),
-        img = document.createElement('img');
-            
-   img.onload = function () { 
-       promise.resolve(img); 
-   };
-       
-   img.onerror = function () { 
-       promise.reject(new Error('Image not found: ' + src));
-   };
-       
-   img.src = src;
-       
-   return promise;
+	var deferred = st.promises.defer(), <span>// Create a new Deferred object</span>
+		 promise = deferred.promise, <span>// reference the promise for this new Defer instance</span>
+		 img = document.createElement('img');
+			 
+	img.onload = function () { 
+		window.setTimeout(function() {
+			deferred.resolve(img);
+		}, 8000); <span>// delay the resolve by 8 seconds so we can see how the async operation would work in a real world situation</span>
+	};
+		
+	img.onerror = function () {
+		deferred.reject(new Error('Image not found: ' + src));
+	};
+		
+	img.src = src;
+		
+	return promise;
 }
-   
+	
 imageLoader('http://google.com/favicon.ico').then(
-   <span>// Success - e.g. onResolve</span>
-   function gotIt (img) {
-       document.body.appendChild(img);
-   },
-   <span>// Fail - e.g. onReject</span>
-   function doh (ex) {
-       document.body.appendChild(document.createTextNode(ex.message));
-   }
+	<span>// Success - e.g. onResolve</span>
+	function gotIt (img) {
+		console.log('img request was a success!');
+		document.body.appendChild(img);
+	},
+	<span>// Fail - e.g. onReject</span>
+	function doh (ex) {
+		console.log('there was an error');
+		document.body.appendChild(document.createTextNode(ex.message));
+	}
 ).then(
-   function shout (img) {
-       console.log('see my new ' + img.src + '?');
-   }
+	function shout (img) {
+		console.log('Im the 2nd then() call. see my new ' + img.src + '?');
+	}
 );
 	</pre>
 </body>
