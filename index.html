@@ -236,17 +236,20 @@
 		// List all properties within this object
 		console.log('Dictionary Names: ', colours.names());
 		
-// Promise design pattern example
+// Promise design pattern 'then' example
 
 		function imageLoader (src) {
 			var deferred = st.promises.defer(), // Create a new Deferred object
 				 promise = deferred.promise, // reference the promise for this new Defer instance
-				 img = document.createElement('img');
-					 
+				 img = document.createElement('img'),
+				 randomDelay = (Math.round(Math.random()*8)) + '000';
+			
+			console.log('The delay for loading the image: ' + src + ', will be ' + randomDelay + ' seconds');
+			
 			img.onload = function () { 
 				window.setTimeout(function() {
 					deferred.resolve(img);
-				}, 8000); // delay the resolve by 8 seconds so we can see how the async operation would work in a real world situation
+				}, randomDelay); // delay the resolve by a random number of seconds (max of 8) so we can see how the async operation would work in a real world situation
 			};
 				
 			img.onerror = function () {
@@ -262,7 +265,9 @@
 			// Success - e.g. onResolve
 			function gotIt (img) {
 				console.log('img request was a success!');
+				var hr = document.createElement('hr');
 				document.body.appendChild(img);
+				document.body.appendChild(hr);
 			},
 			// Fail - e.g. onReject
 			function doh (ex) {
@@ -275,6 +280,41 @@
 			}
 		);
 		
+// Promise design pattern 'when' example
+
+function success(response) {
+	alert('Success! Now insert the two images into the page...');
+	console.log('response (should be Array of images): ', response);
+	document.body.appendChild(response[0]);
+	document.body.appendChild(response[1]);
+}
+
+function error(ex) {
+	alert('Error getting the image?');
+	console.log('ex: ', ex);
+}
+
+function loadImages(srcs) { // srcs = array of image src urls
+    // Array to hold deferred for each image being loaded
+    var deferreds = [];
+
+    // Call loadImage for each src, and push the returned deferred onto the deferreds array
+    for(var i = 0, len = srcs.length; i < len; i++) {
+        deferreds.push(imageLoader(srcs[i]));
+
+        // NOTE: We could push only the promise, but since this array never leaves the loadImages function, 
+        // it's ok to push the whole deferred.  No one can gain access to them.
+        // However, if this array were exposed (e.g. via return value),
+        // it would be better to push only the promise.
+    }
+
+    // Return a new promise that will resolve only when all the promises in deferreds have resolved.
+    // NOTE: st.promises.all returns only a promise, not a deferred, so this is safe to expose to the caller.
+    return st.promises.all(deferreds, success, error);
+}
+
+loadImages(['http://google.com/favicon.ico','https://a248.e.akamai.net/assets.github.com/images/modules/header/logov6-hover.svg']);
+
 
 // Example of internal [[Class]] access to determine an objects true data type
 	
