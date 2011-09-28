@@ -282,38 +282,110 @@
 		
 // Promise design pattern 'when' example
 
-function success(response) {
-	alert('Success! Now insert the two images into the page...');
-	console.log('response (should be Array of images): ', response);
-	document.body.appendChild(response[0]);
-	document.body.appendChild(response[1]);
-}
+		var imageList = ['http://google.com/favicon.ico','https://a248.e.akamai.net/assets.github.com/images/modules/header/logov6-hover.svg'],
+			 imageListLarge = ['http://google.com/favicon.ico','https://a248.e.akamai.net/assets.github.com/images/modules/header/logov6-hover.svg','http://allaboutcar.co.uk/wp-content/uploads/2011/09/Muscle-Cars.jpg','http://www.columbia.edu/~sf2220/Thing/web-content/Images/cardboard1.jpg','http://www.thecouchsessions.com/wp-content/uploads/2011/08/fat-cat.jpg'];
+		
+		function success(response) {
+			alert('Success! Now insert the two images into the page...');
+			console.log('response (should be Array of images): ', response);
+			document.body.appendChild(response[0]);
+			document.body.appendChild(response[1]);
+		}
+		
+		function error(ex) {
+			alert('Error getting the image?');
+			console.log('ex: ', ex);
+		}
+		
+		function loadImages(srcs) { // srcs = array of image src urls
+		    // Array to hold deferred for each image being loaded
+		    var deferreds = [];
+		
+		    // Call loadImage for each src, and push the returned deferred onto the deferreds array
+		    for(var i = 0, len = srcs.length; i < len; i++) {
+		        deferreds.push(imageLoader(srcs[i]));
+		
+		        // NOTE: We could push only the promise, but since this array never leaves the loadImages function, 
+		        // it's ok to push the whole deferred.  No one can gain access to them.
+		        // However, if this array were exposed (e.g. via return value),
+		        // it would be better to push only the promise.
+		    }
+		
+		    // Return a new promise that will resolve only when all the promises in deferreds have resolved.
+		    // NOTE: st.promises.all returns only a promise, not a deferred, so this is safe to expose to the caller.
+		    return st.promises.all(deferreds, success, error);
+		}
+		
+		loadImages(imageList).then(function(){
+			console.log('when syntax: I\'m a then() method running after the loadImages example function which uses the .all() method');
+		});
 
-function error(ex) {
-	alert('Error getting the image?');
-	console.log('ex: ', ex);
-}
+// This is an alternative syntax for the above example.
 
-function loadImages(srcs) { // srcs = array of image src urls
-    // Array to hold deferred for each image being loaded
-    var deferreds = [];
+		// You'll see it over-rides the success/error methods defined inside loadImages for the ones specified here
+		st.promises(loadImages(imageList), function(){
+			console.log('alternative syntax: success');
+		}, function(){
+			console.log('alternative syntax: error');
+		}).then(function(){
+			console.log('alternative syntax: another then method');
+		});
 
-    // Call loadImage for each src, and push the returned deferred onto the deferreds array
-    for(var i = 0, len = srcs.length; i < len; i++) {
-        deferreds.push(imageLoader(srcs[i]));
+// Another example using st.promises.any();
 
-        // NOTE: We could push only the promise, but since this array never leaves the loadImages function, 
-        // it's ok to push the whole deferred.  No one can gain access to them.
-        // However, if this array were exposed (e.g. via return value),
-        // it would be better to push only the promise.
-    }
+		// Let's say we have an image rotator widget that displays a series of images, one at a time. 
+		// Here is a revised implementation of the loadImages function from above, which now returns the array of promises it creates.
+		function loadImagesAny(srcs) { // srcs = array of image src urls
+		    // Array to hold deferred for each image being loaded
+		    var promises = [];
+		
+		    // Call loadImage for each src, and push the returned promises onto the promises array
+		    for(var i = 0, len = srcs.length; i < len; i++) {
+		        promises.push(imageLoader(srcs[i]));
+		
+		        // NOTE: We could push only the promise, but since this array never leaves the loadImages function, 
+		        // it's ok to push the whole deferred.  No one can gain access to them.
+		        // However, if this array were exposed (e.g. via return value),
+		        // it would be better to push only the promise.
+		    }
+		
+		    // Return the array of promises
+		    return promises;
+		}
+		
+		// When our image rotator starts up (or even beforehand, possibly on pageload, for example),
+		// we could fire off requests for all the images, but only care about the one that loads first (i.e. fastest).
+		// This has the benefit of pre-loading and letting the browser cache the remaining images, without any additional work, 
+		// so when we need to display them later, they are fast.
 
-    // Return a new promise that will resolve only when all the promises in deferreds have resolved.
-    // NOTE: st.promises.all returns only a promise, not a deferred, so this is safe to expose to the caller.
-    return st.promises.all(deferreds, success, error);
-}
+		// Load a bunch of images that we will display in an image rotator.
+		// Only care about the first one that loads, so we can show it to the the user ASAP.
+		// This has the benefit of pre-loading and letting the browser cache the remaining images, without any additional work.
+		st.promises.any(loadImagesAny(imageList),
+		    function(firstAvailableImage) {
+		        // NOTE: In when.js <= 0.9.3:
+		        //   firstAvailableImage will be an array with 1 Image in it 
+		        console.log('any method: ', firstAvailableImage[0]);
+		
+		        // In an upcoming version:
+		        //   firstAvailableImage will be the actual Image that caused
+		        //   when.any() to complete
+		    }
+		);
+		
+// Another example using st.promises.some();
 
-loadImages(['http://google.com/favicon.ico','https://a248.e.akamai.net/assets.github.com/images/modules/header/logov6-hover.svg']);
+		// Now let's say we have a more advanced image rotator that can display 3 images to the user at once.
+		// Load a bunch of images that we will display in an image rotator.
+		// Only care about the first 3, so we can show them to the user ASAP.
+		// Again, this will also pre-load and allow the browser to cache the remaining images.
+		st.promises.some(loadImagesAny(imageListLarge), 3,
+		    function(initialImageSet) {
+		        // initialImageSet will be an array of the first 3 (or 
+		        // imageSrcArray.length, if < 3) Images that loaded
+		        console.log('some method: ', initialImageSet);
+		    }
+		);
 
 
 // Example of internal [[Class]] access to determine an objects true data type

@@ -1064,6 +1064,46 @@
 				}()),
 				
 				/**
+				 * Following method determines the left/top position of the target element.
+				 * This is so we can more accurately position specific elements.
+				 *
+				 * @param elem { Node } the target element
+				 * @param end { String } id value for the top most element we want to check against
+				 * @return { Object } object containing x and y position for specified element
+				 */
+				getOffset: function(elem, end) {
+					var _x = 0,
+						 _y = 0;
+					
+					while (elem && !isNaN(elem.offsetLeft) && !isNaN(elem.offsetTop)) {
+						// Store the x and y co-ordinates of the current element
+						_x += elem.offsetLeft - elem.scrollLeft;
+						_y += elem.offsetTop - elem.scrollTop;
+						
+						// Then move onto the next element up (and we keep going all the way to the top of the document unless stopped)
+						// We use offsetParent instead of parentNode (like the original script had) because the offsetLeft/Top adds on extra un-needed dimensions!
+						elem = elem.offsetParent;
+						
+						/*
+							In the following if conditional…
+							
+							We need to avoid a situation where the <body> tag isn't considered an offsetParent and so the browser continues up until null is returned
+							OR
+							We can specify an elements id as the top level element to top checking for
+							OR
+							We can pass through '_now_' as the end value which means the check stops immediately
+							OR
+							Failing the id or _now_ we can try and stop at the document.body element (which will only work if the body is considered an offsetParent)
+						 */
+						if (elem == null || elem.id === end || end === '_now_' || elem.tagName.toLowerCase() === 'body') {
+							break;
+						}
+					}
+					
+					return { top: _y, left: _x };
+				},
+				
+				/**
 				 * The following method is a Constructor with additional methods attached to the prototype
 				 * which aid every time you need to check whether a property is present in an object.
 				 * We approach an object as just a set of properties.
@@ -1700,25 +1740,20 @@
 			 * to the MIT License at: http://www.opensource.org/licenses/mit-license.php.
 			 *
 			 * File: when.js
-			 * Version: 0.9.2
+			 * Version: 0.9.3
 			 */
 			promises: (function() {
 				
-				// No-op function used in function replacement in various
-				// places below.
+				// No-op function used in function replacement in various places below.
 				function noop() {}
 			
+				// Use freeze if it exists
 				var freeze = Object.freeze || noop;
 			
-				/*
-					Function: Deferred
-					Creates a new, CommonJS compliant, Deferred with fully isolated
-					resolver and promise parts, either or both of which may be given out
-					safely to consumers.
-					The Deferred itself has the full API: resolve, reject, progress, and
-					then. The resolver has resolve, reject, and progress.  The promise
-					only has then.
-				*/
+				// Creates a new, CommonJS compliant, Deferred with fully isolated resolver and promise parts, 
+				// either or both of which may be given out safely to consumers.
+				// The Deferred itself has the full API: resolve, reject, progress, and then. 
+				// The resolver has resolve, reject, and progress.  The promise only has then.
 				function defer() {
 					var deferred, promise, resolver, result, listeners, tail,
 						_then, _progress, complete;
@@ -1748,17 +1783,17 @@
 						return _then(callback, errback, progback);
 					}
 			
-					function resolve(val) { 
+					function resolve(val) {
 						complete('resolve', val);
 					}
 			
 					function reject(err) {
 						complete('reject', err);
 					}
-					
+			
 					_progress = function(update) {
 						var listener, progress;
-						
+			
 						listener = listeners;
 			
 						while(listener) {
@@ -1773,23 +1808,19 @@
 					}
 			
 					complete = function(which, val) {
-						// Save original thenImpl
+						// Save original _then
 						var origThen = _then;
 			
-						// Replace thenImpl with one that immediately notifies
-						// with the result.
+						// Replace _then with one that immediately notifies with the result.
 						_then = function newThen(callback, errback) {
 							var promise = origThen(callback, errback);
 							notify(which);
 							return promise;
 						};
 			
-						// Replace complete so that this Deferred
-						// can only be completed once.  Note that this leaves
-						// notify() intact so that it can be used in the
-						// rewritten thenImpl above.
-						// Replace progressImpl, so that subsequent attempts
-						// to issue progress throw.
+						// Replace complete so that this Deferred can only be completed once.  
+						// Note that this leaves notify() intact so that it can be used in the rewritten _then above.
+						// Replace _progress, so that subsequent attempts to issue progress throw.
 						complete = _progress = function alreadyCompleted() {
 							throw new Error("already completed");
 						};
@@ -1801,9 +1832,8 @@
 						notify(which);
 					};
 			
-			        function notify(which) {
-			            // Traverse all listeners registered directly with this Deferred,
-						// also making sure to handle chained thens
+			      function notify(which) {
+			         // Traverse all listeners registered directly with this Deferred, also making sure to handle chained thens
 						while(listeners) {
 							var listener, ldeferred, newResult, handler;
 			
@@ -1817,18 +1847,17 @@
 									newResult = handler(result);
 			
 									if(isPromise(newResult)) {
-										// If the handler returned a promise, chained deferreds
-										// should complete only after that promise does.
-										newResult.then(ldeferred.resolve, ldeferred.reject, ldeferred.progress);
-									
+										// If the handler returned a promise, chained deferreds should complete only after that promise does.
+										_chain(newResult, ldeferred);
+			
 									} else {
 										// Complete deferred from chained then()
 										// FIXME: Which is correct?
 										// The first always mutates the chained value, even if it is undefined
 										// The second will only mutate if newResult !== undefined
 										// ldeferred[which](newResult);
-										
-										ldeferred[which](newResult === undef ? result : newResult);							
+			
+										ldeferred[which](newResult === undef ? result : newResult);
 			
 									}
 								} catch(e) {
@@ -1840,7 +1869,7 @@
 									ldeferred.reject(e);
 								}
 							}
-						}			
+						}
 					}
 			
 					// The full Deferred object, with both Promise and Resolver parts
@@ -1867,45 +1896,41 @@
 					return deferred;
 				}
 			
-				/*
-					Function: isPromise
-					Determines if promiseOrValue is a promise or not.  Uses the feature
-					test from http://wiki.commonjs.org/wiki/Promises/A to determine if
-					promiseOrValue is a promise.
-			
-					Parameters:
-						promiseOrValue - anything
-			
-					Return:
-					true if and only if promiseOrValue is a promise.
-				*/
+				// Determines if promiseOrValue is a promise or not.  Uses the feature
+				// test from http://wiki.commonjs.org/wiki/Promises/A to determine if
+				// promiseOrValue is a promise.
+				//
+				// Parameters:
+				// 	promiseOrValue - anything
+				//
+				// Return true if promiseOrValue is a promise.
 				function isPromise(promiseOrValue) {
 					return promiseOrValue && typeof promiseOrValue.then === 'function';
 				}
 			
-				/*
-					Function: when
-				*/
+				// Register a handler for a promise or immediate value
+				//
+				// Parameters:
+				// 	promiseOrValue - anything
+				//
+				// Returns a new promise that will resolve:
+				// 1. if promiseOrValue is a promise, when promiseOrValue resolves
+				// 2. if promiseOrValue is a value, immediately
 				function when(promiseOrValue, callback, errback, progressHandler) {
-					var deferred = defer();
+					var deferred, resolve, reject;
 			
-					function resolve(value) {
-						return callback ? callback(value) : value;
-					}
+					deferred = defer();
 			
-					function reject(err) {
-						return errback ? errback(err) : err;
-					}
+					resolve = callback ? callback : function(val) { return val; };
+					reject  = errback  ? errback  : function(err) { return err; };
 			
-					function progress(update) {
-						progressHandler(update);
-					}
-					
 					if(isPromise(promiseOrValue)) {
 						// If it's a promise, ensure that deferred will complete when promiseOrValue
 						// completes.
-						promiseOrValue.then(resolve, reject, progress);
-						deferred = _chain(promiseOrValue, deferred);
+						promiseOrValue.then(resolve, reject,
+							function(update) { progressHandler(update); }
+						);
+						_chain(promiseOrValue, deferred);
 			
 					} else {
 						// If it's a value, resolve immediately
@@ -1916,9 +1941,9 @@
 					return deferred.promise;
 				}
 			
-				/*
-					Function: some
-				*/
+				// Return a promise that will resolve when howMany of the supplied promisesOrValues
+				// have resolved. The resolution value of the returned promise will be an array of
+				// length howMany containing the resolutions values of the triggering promisesOrValues.
 				function some(promisesOrValues, howMany, callback, errback, progressHandler) {
 					var toResolve, results, ret, deferred, resolver, rejecter, handleProgress;
 			
@@ -1953,7 +1978,7 @@
 					// promises have been rejected instead of only one?
 					rejecter = function(err) {
 						rejecter = handleProgress = noop;
-						deferred.reject(err);		
+						deferred.reject(err);
 					};
 			
 					// Wrapper so that rejecer can be replaced
@@ -1975,44 +2000,40 @@
 						var promiseOrValue, i = 0;
 						while((promiseOrValue = promisesOrValues[i++])) {
 							when(promiseOrValue, resolve, reject, progress);
-						}			
+						}
 					}
 			
 					return ret;
 				}
 			
-				/*
-					Function: all
-				*/
+				// Return a promise that will resolve only once all the supplied promisesOrValues
+				// have resolved. The resolution value of the returned promise will be an array
+				// containing the resolution values of each of the promisesOrValues.
 				function all(promisesOrValues, callback, errback, progressHandler) {
 					return some(promisesOrValues, promisesOrValues.length, callback, errback, progressHandler);
 				}
 			
-				/*
-					Function: any
-				*/
+				// Return a promise that will resolve when any one of the supplied promisesOrValues
+				// has resolved. The resolution value of the returned promise will be the resolution
+				// value of the triggering promiseOrValue.
 				function any(promisesOrValues, callback, errback, progressHandler) {
 					return some(promisesOrValues, 1, callback, errback, progressHandler);
 				}
 			
-				/*
-					Function: chain
-					Chain a promise to a resolver such that when the first completes, the second
-					is completed with either the completion value of the first, or
-					in the case of resolve, completed with the optional resolveValue.
-			
-					Parameters:
-						promiseOrValue - Promise, that when completed, will trigger completion of resolver, or
-							value that will trigger immediate resolution of resolver
-						resolver - Resolver to complete when promise completes
-						resolveValue - optional value to use as the resolution value
-							used to resolve second, rather than the resolution
-							value of first.
-					
-					Returns:
-						a new Promise that will be resolved when resolver is completed, with
-						its completion value.
-				*/
+				// Ensure that resolution of promiseOrValue will complete resolver with the completion
+				// value of promiseOrValue, or instead with optionalValue if it is provided.
+				//
+				// Parameters:
+				// 	promiseOrValue - Promise, that when completed, will trigger completion of resolver,
+				//      or value that will trigger immediate resolution of resolver
+				// 	resolver - Resolver to complete when promise completes
+				// 	resolveValue - optional value to use as the resolution value
+				// 		used to resolve second, rather than the resolution
+				// 		value of first.
+				//
+				// Returns a new promise that will complete when promiseOrValue is completed,
+				// with the completion value of promiseOrValue, or instead with optionalValue if it
+				// is provided.
 				function chain(promiseOrValue, resolver, resolveValue) {
 					var inputPromise, initChain;
 			
@@ -2031,22 +2052,30 @@
 					return initChain(when.defer()).promise;
 				}
 			
+				// Internal chain helper that does not create a new deferred/promise
+				// Always returns it's 2nd arg.
+				// NOTE: deferred must be a when.js deferred, or a resolver whose functions
+				// can be called without their original context.
 				function _chain(promise, deferred, resolveValue) {
-					var args = arguments;
 					promise.then(
-						function(val)    { deferred.resolve(args.length > 2 ? resolveValue : val); },
-						function(err)    { deferred.reject(err); },
-						function(update) { deferred.progress(update); }
+						// If resolveValue was supplied, need to wrap up a new function
+						// If not, can use deferred.resolve directly
+						arguments.length > 2
+							? function() { deferred.resolve(resolveValue) }
+							: deferred.resolve,
+						deferred.reject,
+						deferred.progress
 					);
 			
 					return deferred;
 				}
 			
-				/*
-					Section: Public API
-				*/
+				//
+				// Public API
+				//
 			
-				when.defer     = defer;			
+				when.defer     = defer;
+			
 				when.isPromise = isPromise;
 				when.some      = some;
 				when.all       = all;
